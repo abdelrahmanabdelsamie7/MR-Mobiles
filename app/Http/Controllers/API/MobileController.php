@@ -13,6 +13,13 @@ class MobileController extends Controller
         $mobiles = Mobile::all();
         return $this->sendSuccess('All Mobiles Retrieved Successfully!', $mobiles);
     }
+    public function show(string $id)
+    {
+        $mobile = Mobile::with(['brand:id,name,image', 'category:id,name', 'colors', 'images'])
+            ->findOrFail($id);
+
+        return $this->sendSuccess('Mobile Retrieved Successfully!', $mobile);
+    }
     public function store(MobileRequest $request)
     {
         $data = $request->validated();
@@ -24,11 +31,6 @@ class MobileController extends Controller
         }
         $mobile = Mobile::create($data);
         return $this->sendSuccess('Mobile Added Successfully', $mobile, 201);
-    }
-    public function show(string $id)
-    {
-        $mobile = Mobile::with(['brand','category','colors','images'])->findOrFail($id);
-        return $this->sendSuccess('Mobile Retrieved Successfully!', $mobile);
     }
     public function update(MobileRequest $request, string $id)
     {
