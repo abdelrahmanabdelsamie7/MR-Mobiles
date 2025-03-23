@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\File;
 class BrandController extends Controller
 {
     use ResponseJsonTrait;
+    public function __construct()
+    {
+        $this->middleware('auth:admins')->only(['store','update','destroy']);
+    }
     public function index()
     {
         $brands = Brand::all();

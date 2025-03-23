@@ -12,7 +12,7 @@ class CartItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-           'cart_id' => 'required|uuid|exists:carts,id',
+           'cart_id' => 'uuid|exists:carts,id',
              'product_id' => [
                 'required',
                 'uuid',
@@ -27,7 +27,7 @@ class CartItemRequest extends FormRequest
             ],
             'product_type' => ['required', Rule::in(['mobile', 'accessory'])],
             'quantity' => 'required|integer|min:1',
-            'price' => 'required|numeric|min:0',
+            'price' => 'numeric|min:0',
         ];
     }
 }

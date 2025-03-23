@@ -12,7 +12,6 @@ class MobileRequest extends FormRequest
         return [
             'title' => 'required|string|max:255',
             'brand_id' => 'required|exists:brands,id',
-            'category_id' => 'required|exists:categories,id',
             'model_number' => 'required|string|max:100',
             'description' => 'nullable|string',
             'battery' => 'required|integer|min:1000|max:10000',

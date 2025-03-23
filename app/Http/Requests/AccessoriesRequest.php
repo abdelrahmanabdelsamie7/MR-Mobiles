@@ -12,11 +12,10 @@ class AccessoriesRequest extends FormRequest
          return [
             'title'          => 'required|string|max:255',
             'brand_id'       => 'required|exists:brands,id',
-            'category_id'    => 'required|exists:categories,id',
             'description'    => 'nullable|string',
             'battery'        => 'nullable|integer|min:100',
             'color'          => 'nullable|string|max:50',
-            'image'          => 'required|image|mimes:jpeg,png,jpg,gif|max:4048',
+            'image'          => 'nullable|image|mimes:jpeg,png,jpg,gif|max:4048',
             'price'          => 'required|numeric|min:0',
             'discount'       => 'nullable|integer|min:0|max:100',
             'stock_quantity' => 'nullable|integer|min:0',

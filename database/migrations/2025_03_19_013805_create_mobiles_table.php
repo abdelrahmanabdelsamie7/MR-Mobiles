@@ -9,7 +9,6 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->string('title');
             $table->foreignUuid('brand_id')->constrained('brands')->cascadeOnDelete()->cascadeOnUpdate();
-            $table->foreignUuid('category_id')->constrained('categories')->cascadeOnDelete()->cascadeOnUpdate();
             $table->string('model_number');
             $table->text('description')->nullable();
             $table->integer('battery');

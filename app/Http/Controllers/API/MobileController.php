@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\File;
 class MobileController extends Controller
 {
     use ResponseJsonTrait;
+    public function __construct()
+    {
+        $this->middleware('auth:admins')->only(['store','update','destroy']);
+    }
     public function index()
     {
         $mobiles = Mobile::all();
@@ -15,7 +19,7 @@ class MobileController extends Controller
     }
     public function show(string $id)
     {
-        $mobile = Mobile::with(['brand:id,name,image', 'category:id,name', 'colors', 'images'])
+        $mobile = Mobile::with(['brand:id,name,image','colors', 'images'])
             ->findOrFail($id);
 
         return $this->sendSuccess('Mobile Retrieved Successfully!', $mobile);

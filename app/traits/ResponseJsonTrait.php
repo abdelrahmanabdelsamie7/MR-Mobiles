@@ -11,4 +11,11 @@ trait ResponseJsonTrait
             'data' => $data,
         ], $status);
     }
+    public function sendError(string $msg, int $status = 404)
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $msg,
+        ], $status);
+    }
 }
