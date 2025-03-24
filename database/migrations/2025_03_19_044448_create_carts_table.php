@@ -8,6 +8,7 @@ return new class extends Migration {
         Schema::create('carts', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete()->cascadeOnUpdate();
+            $table->decimal('total_price', 10, 2)->default(0);
             $table->timestamps();
         });
     }

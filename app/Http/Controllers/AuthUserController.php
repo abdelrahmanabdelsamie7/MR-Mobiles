@@ -1,17 +1,18 @@
 <?php
 namespace App\Http\Controllers;
-use App\Models\Cart;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\VerifyEmail;
+use App\Mail\ResetPassword;
 class AuthUserController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register', 'verifyEmail', 'resendVerification', 'forgotPassword', 'resetPassword']]);
     }
     public function login(Request $request)
     {
@@ -22,39 +23,124 @@ class AuthUserController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
-        if (!$token = auth('api')->attempt($validator->validated())) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
+        $user = User::where('email', $request->email)->first();
 
-        return $this->respondWithToken($token);
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['error' => 'Invalid credentials'], 401);
+        }
+        if (!$user->email_verified_at) {
+            return response()->json(['error' => 'Please verify your email before logging in.'], 403);
+        }
+        $token = auth('api')->login($user);
+        return response()->json([
+            'message' => 'تم تسجيل الدخول بنجاح!',
+            'access_token' => $token,
+            'user' => $user
+        ]);
     }
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|between:2,100',
-            'email' => 'required|string|email|max:100|unique:users,email,' . ($userId ?? 'NULL') . ',id',
-            'phone' => 'required|string|regex:/^[0-9]+$/|min:10|max:15',
-            'address' => 'required|string|min:5|max:255',
+            'email' => 'required|string|email|max:100|unique:users',
+            'phone' => 'required|string|min:8|max:15|regex:/^[0-9]+$/',
+            "address" => 'required|string',
             'password' => 'required|string|min:6',
         ]);
         if ($validator->fails()) {
             return response()->json($validator->errors()->toJson(), 400);
         }
+        $verificationToken = Str::random(60);
         $user = User::create([
             'name' => $request->get('name'),
             'email' => $request->get('email'),
             'phone' => $request->get('phone'),
-            'address' => $request->get('address'),
+            "address" => $request->get('address'),
             'password' => Hash::make($request->get('password')),
+            'verification_token' => $verificationToken,
+            'verification_token_expires_at' => now()->addHours(3),
         ]);
-        Cart::create(['user_id' => $user->id]);
-        $token = JWTAuth::fromUser($user);
+        Mail::to($user->email)->queue(new VerifyEmail($user));
         return response()->json([
-            'message' => 'User successfully registered',
-            'user' => $user->only(['id', 'name', 'email', 'phone', 'address', 'created_at', 'updated_at']),
-            'cart_id' => $user->cart->id,
-            'token' => $token,
-        ], 200);
+            'message' => 'User registered successfully. Please check your email to verify your account.',
+        ], 201);
+    }
+    public function verifyEmail($token)
+    {
+        $user = User::where('verification_token', $token)
+            ->where('verification_token_expires_at', '>', now())
+            ->first();
+        if (!$user) {
+            return response()->json(['error' => 'Invalid or expired verification token'], 400);
+        }
+        $user->email_verified_at = now();
+        $user->verification_token = null;
+        $user->verification_token_expires_at = null;
+        $user->save();
+        return response()->json(['message' => 'Email verified successfully , Start Now Go To Login'], 200);
+    }
+    public function resendVerification(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|string|email|exists:users,email'
+        ]);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
+        $user = User::where('email', $request->email)->first();
+        if ($user->email_verified_at) {
+            return response()->json(['message' => 'Email is already verified.'], 200);
+        }
+        $user->verification_token = Str::random(60);
+        $user->verification_token_expires_at = now()->addHours(3);
+        $user->save();
+        Mail::to($user->email)->queue(new VerifyEmail($user));
+        return response()->json(['message' => 'Verification email has been resent.']);
+    }
+    public function forgotPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|string|email|exists:users,email',
+        ]);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
+        $user = User::where('email', $request->email)->first();
+        $token = Str::random(60);
+        $user->reset_token = $token;
+        $user->reset_token_expires_at = now()->addHour();
+        $user->save();
+
+        try {
+            Mail::to($user->email)->queue(new ResetPassword($user, $token));
+        } catch (\Exception $e) {
+            \Log::error('Password reset email failed: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to send reset email.'], 500);
+        }
+        return response()->json(['message' => 'Password reset link sent to your email.'], 200);
+    }
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|string|email|exists:users,email',
+            'token' => 'required|string',
+            'password' => 'required|string|confirmed|min:8',
+        ]);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
+        $user = User::where('email', $request->email)
+            ->where('reset_token', $request->token)
+            ->where('reset_token_expires_at', '>', now())
+            ->first();
+        if (!$user) {
+            return response()->json(['error' => 'Invalid or expired reset token.'], 400);
+        }
+        $user->password = Hash::make($request->password);
+        $user->reset_token = null;
+        $user->reset_token_expires_at = null;
+        $user->save();
+        return response()->json(['message' => 'Password reset successfully.'], 200);
     }
     public function getaccount()
     {
@@ -63,8 +149,17 @@ class AuthUserController extends Controller
     public function logout()
     {
         auth('api')->logout();
-
         return response()->json(['message' => 'Successfully logged out']);
+    }
+    public function deleteAccount(Request $request)
+    {
+        $user = auth('api')->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        auth('api')->logout();
+        $user->delete();
+        return response()->json(['message' => 'Account deleted successfully.'], 200);
     }
     public function refresh()
     {
@@ -75,7 +170,7 @@ class AuthUserController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 180
+            'expires_in' => auth('api')->factory()->getTTL() * 120
         ]);
     }
 }

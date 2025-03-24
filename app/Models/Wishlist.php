@@ -10,6 +10,7 @@ class Wishlist extends Model
     use HasFactory, UsesUuid;
     protected $table = 'wishlists';
     protected $fillable = ['user_id', 'product_id', 'product_type'];
+    protected $hidden = ['updated_at'];
     public function product()
     {
         return $this->morphTo();

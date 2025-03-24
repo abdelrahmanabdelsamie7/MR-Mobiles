@@ -9,8 +9,6 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->foreignUuid('mobile_id')->constrained('mobiles')->cascadeOnDelete()->cascadeOnUpdate();
             $table->string('image');
-            $table->timestamps();
-
         });
     }
     public function down(): void

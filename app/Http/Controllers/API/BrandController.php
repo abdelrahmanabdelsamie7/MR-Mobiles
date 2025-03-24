@@ -34,7 +34,7 @@ class BrandController extends Controller
     }
     public function show(string $id)
     {
-        $brand = Brand::findOrFail($id);
+        $brand = Brand::with(['mobiles' ,'accessories'])->findOrFail($id);
         return $this->sendSuccess('Brand Data Retrieved Successfully!', $brand);
     }
     public function update(BrandRequest $request, string $id)

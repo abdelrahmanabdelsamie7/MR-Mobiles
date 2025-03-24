@@ -1,33 +1,46 @@
 <?php
 namespace App\Http\Controllers\API;
+
 use App\Http\Controllers\Controller;
-use App\traits\ResponseJsonTrait;
+use App\Models\Cart;
+use App\Traits\ResponseJsonTrait;
+
 class CartController extends Controller
 {
     use ResponseJsonTrait;
+
+    protected $user;
+
+    public function __construct()
+    {
+        $this->user = auth('api')->user();
+    }
+
     public function index()
     {
-        $user = auth('api')->user();
-        $cart = $user->cart()->with('cartItems')->first();
-        if (!$cart || $cart->cartItems->isEmpty()) {
-            return $this->sendSuccess("Cart doesn't have any product , is empty!");
+        $cart = Cart::where('user_id', $this->user->id)->with('cartItems')->first();
+
+        if (!$cart || optional($cart->cartItems)->isEmpty()) {
+            return $this->sendSuccess("Cart is empty!");
         }
+
         return $this->sendSuccess('Cart Retrieved Successfully!', $cart);
     }
+
     public function store()
     {
-        $user = auth('api')->user();
-        $cart = $user->cart()->firstOrCreate(['user_id' => $user->id]);
+        $cart = Cart::firstOrCreate(['user_id' => $this->user->id]);
+
         return $this->sendSuccess('Cart Created Successfully!', $cart, 201);
     }
+
     public function deleteItems()
     {
-        $user = auth('api')->user();
-        $cart = $user->cart;
-        if (!$cart) {
-            return response()->json(['message' => 'Cart not found'], 404);
-        }
+        $cart = Cart::where('user_id', $this->user->id)->firstOrFail();
+
         $cart->cartItems()->delete();
+        $cart->update(['total_price' => 0]);
+
         return $this->sendSuccess('Cart items deleted successfully!');
     }
 }

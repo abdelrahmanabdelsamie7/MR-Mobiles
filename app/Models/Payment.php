@@ -1,11 +1,23 @@
 <?php
-
 namespace App\Models;
-
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Cart;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Payment extends Model
 {
-    use HasFactory;
+  use HasFactory, HasUuids;
+
+    protected $fillable = [
+        'cart_id',
+        'payment_method',
+        'amount',
+        'status',
+    ];
+
+    public function cart()
+    {
+        return $this->belongsTo(Cart::class);
+    }
 }
