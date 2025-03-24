@@ -7,13 +7,13 @@ return new class extends Migration {
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('cart_id')->constrained('carts')->cascadeOnDelete()->cascadeOnUpdate();
-            $table->enum('payment_method', ['credit_card','cash_on_delivery']);
+            $table->foreignUuid('order_id')->constrained('orders')->cascadeOnDelete()->cascadeOnUpdate();
+            $table->enum('payment_method', ['credit_card', 'cash_on_delivery']);
+            $table->string('transaction_id')->nullable();
             $table->decimal('amount', 10, 2);
             $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');
             $table->timestamps();
         });
-
     }
     public function down(): void
     {

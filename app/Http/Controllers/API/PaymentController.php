@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Stripe\Checkout\Session;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
-use App\Models\{Cart, Payment,Order,OrderItem};
+use App\Models\{Cart, Payment, Order, OrderItem};
 use App\Mail\PaymentSuccessMail;
 use App\Traits\ResponseJsonTrait;
 use App\Http\Controllers\Controller;
@@ -66,7 +66,7 @@ class PaymentController extends Controller
         if (!$cart_id) {
             return $this->sendError('Cart ID not found in metadata', 400);
         }
-        $cart = Cart::with('cartItems')->find($cart_id);
+        $cart = Cart::with('cartItems.product')->find($cart_id);
         if (!$cart) {
             return $this->sendError('Cart not found', 404);
         }
@@ -82,17 +82,20 @@ class PaymentController extends Controller
             OrderItem::create([
                 'order_id' => $order->id,
                 'product_id' => $cartItem->product_id,
+                'product_type' => $cartItem->product_type,
                 'quantity' => $cartItem->quantity,
-                'price' => $cartItem->product->price,
+                'price' => $cartItem->price,
             ]);
         }
-        $payment = Payment::create([
+        Payment::create([
             'order_id' => $order->id,
             'payment_method' => 'credit_card',
+            'transaction_id' => $payment_intent_id,
             'amount' => $cart->total_price,
             'status' => 'completed',
         ]);
         $cart->cartItems()->delete();
+        $cart->update(['total_price' => 0]);
         Mail::to($customer_email)->send(new PaymentSuccessMail($order->total_price, $order->id));
         return $this->sendSuccess('Payment successful and order created!', ['order_id' => $order->id]);
     }

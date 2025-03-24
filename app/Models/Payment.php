@@ -10,8 +10,9 @@ class Payment extends Model
   use HasFactory, HasUuids;
 
     protected $fillable = [
-        'cart_id',
+        'order_id',
         'payment_method',
+        'transaction_id',
         'amount',
         'status',
     ];

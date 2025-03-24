@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\{AuthUserController,AuthAdminController};
-use App\Http\Controllers\API\{BrandController,MobileController,MobileColorController,MobileImageController,AccessoryController,WishlistController,CartController,CartItemController,ContactController,PaymentController};
+use App\Http\Controllers\API\{BrandController,MobileController,MobileColorController,MobileImageController,AccessoryController,WishlistController,CartController,CartItemController,ContactController,PaymentController,OrderController};
 Route::apiResource('brands' , BrandController::class);
 Route::apiResource('mobiles' , MobileController::class);
 Route::apiResource('mobile-colors' , MobileColorController::class);
@@ -10,6 +10,7 @@ Route::apiResource('accessories' , AccessoryController::class);
 Route::apiResource('wishlist' , WishlistController::class);
 Route::apiResource('cart' , CartController::class);
 Route::apiResource('cart-items' , CartItemController::class);
+Route::apiResource('orders' , OrderController::class);
 Route::apiResource('contact-us' , ContactController::class);
 
 
@@ -41,8 +42,6 @@ Route::middleware('api')->prefix('admin')->group(function()  {
         Route::post('/logout', [AuthAdminController::class, 'logout'])->name('admin.logout');
         Route::get('/getaccount', [AuthAdminController::class, 'getAccount'])->name('admin.getAccount');
 });
-
 Route::post('/payment/create-checkout-session', [PaymentController::class, 'createCheckoutSession']);
 Route::get('/payment/success', [PaymentController::class, 'success']);
 Route::get('/payment/cancel', [PaymentController::class, 'cancel']);
-Route::post('/stripe/webhooks', [PaymentController::class, 'handleWebhook']);

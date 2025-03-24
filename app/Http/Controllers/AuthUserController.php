@@ -110,7 +110,6 @@ class AuthUserController extends Controller
         $user->reset_token = $token;
         $user->reset_token_expires_at = now()->addHour();
         $user->save();
-
         try {
             Mail::to($user->email)->queue(new ResetPassword($user, $token));
         } catch (\Exception $e) {
