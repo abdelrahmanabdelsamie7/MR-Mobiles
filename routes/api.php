@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\{AuthUserController,AuthAdminController};
-use App\Http\Controllers\API\{BrandController,MobileController,MobileColorController,MobileImageController,AccessoryController,WishlistController,CartController,CartItemController,ContactController,PaymentController,OrderController};
+use App\Http\Controllers\API\{BrandController,MobileController,MobileColorController,MobileImageController,AccessoryController,WishlistController,CartController,CartItemController,ContactController,PaymentController,OrderController,StatisticsController};
 Route::apiResource('brands' , BrandController::class);
 Route::apiResource('mobiles' , MobileController::class);
 Route::apiResource('mobile-colors' , MobileColorController::class);
@@ -12,8 +12,7 @@ Route::apiResource('cart' , CartController::class);
 Route::apiResource('cart-items' , CartItemController::class);
 Route::apiResource('orders' , OrderController::class);
 Route::apiResource('contact-us' , ContactController::class);
-
-
+Route::get('statistics', [StatisticsController::class , 'getStatistics']);
 // Update Image
 Route::match(['post', 'put', 'patch'], 'brands/{id}', [BrandController::class, 'update']);
 Route::match(['post', 'put', 'patch'], 'mobiles/{id}', [MobileController::class, 'update']);

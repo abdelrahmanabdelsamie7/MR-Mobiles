@@ -10,7 +10,7 @@ class Accessory extends Model
     use HasFactory;
     use UsesUuid;
     protected $table = 'accessories';
-    protected $fillable = ['title', 'brand_id', 'description', 'battery', 'color', 'image', 'price', 'discount', 'stock_quantity', 'status', 'rating'];
+    protected $fillable = ['title', 'brand_id', 'description', 'battery', 'color', 'image', 'price', 'discount', 'stock_quantity', 'status'];
     public function brand()
     {
         return $this->belongsTo(Brand::class);

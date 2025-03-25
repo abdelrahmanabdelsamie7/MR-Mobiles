@@ -4,7 +4,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\WishlistRequest;
 use App\Models\Wishlist;
 use App\traits\ResponseJsonTrait;
-
 class WishlistController extends Controller
 {
     use ResponseJsonTrait;

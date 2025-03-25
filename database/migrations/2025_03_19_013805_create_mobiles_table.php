@@ -24,7 +24,6 @@ return new class extends Migration {
             $table->integer('stock_quantity')->default(0);
             $table->string('image_cover');
             $table->enum('status', ['available', 'out_of_stock', 'coming_soon'])->default('available');
-            $table->decimal('rating', 2, 1)->nullable();
             $table->timestamps();
         });
     }

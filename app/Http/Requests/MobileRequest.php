@@ -27,7 +27,6 @@ class MobileRequest extends FormRequest
             'stock_quantity' => 'required|integer|min:0',
             'image_cover' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:4048',
             'status'         => 'required|in:available,out_of_stock,coming_soon',
-            'rating'         => 'nullable|min:0|max:5',
         ];
     }
 }
