@@ -9,9 +9,10 @@ class BrandRequest extends FormRequest
     }
     public function rules(): array
     {
+        $brandId = $this->route('id');
         return [
-            'name' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp max:4048',
+            'name' => 'required|string|max:255|unique:brands,name,' . $brandId,
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:4048',
         ];
-    }
+}
 }

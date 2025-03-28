@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->integer('discount')->nullable()->default(0);;
             $table->integer('stock_quantity')->default(0);
             $table->enum('status', ['available', 'out_of_stock', 'coming_soon'])->default('available');
+            $table->string('product_type')->default('accessory');
             $table->timestamps();
         });
     }

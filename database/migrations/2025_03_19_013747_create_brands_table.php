@@ -8,7 +8,7 @@ return new class extends Migration
     {
         Schema::create('brands', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('name');
+            $table->string('name')->unique();
             $table->string('image');
             $table->timestamps();
         });

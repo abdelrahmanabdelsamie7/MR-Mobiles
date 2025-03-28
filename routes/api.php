@@ -12,6 +12,8 @@ Route::apiResource('cart' , CartController::class);
 Route::apiResource('cart-items' , CartItemController::class);
 Route::apiResource('orders' , OrderController::class);
 Route::apiResource('contact-us' , ContactController::class);
+Route::post('/contact-us/{id}/reply', [ContactController::class, 'reply'])->middleware('auth:admins');
+
 Route::get('statistics', [StatisticsController::class , 'getStatistics']);
 // Update Image
 Route::match(['post', 'put', 'patch'], 'brands/{id}', [BrandController::class, 'update']);

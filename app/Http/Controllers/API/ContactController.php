@@ -1,9 +1,13 @@
 <?php
 namespace App\Http\Controllers\API;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\ContactRequest;
 use App\Models\Contact;
+use Illuminate\Http\Request;
+use App\Mail\ReplyToContactMail;
 use App\traits\ResponseJsonTrait;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Mail;
+use App\Http\Requests\ContactRequest;
+
 class ContactController extends Controller
 {
     use ResponseJsonTrait;
@@ -31,5 +35,15 @@ class ContactController extends Controller
         $contact = Contact::findOrFail($id);
         $contact->delete();
         return $this->sendSuccess('Contact Data Removed Successfully');
+    }
+    // Relt To Contact Message
+    public function reply(Request $request, $id)
+    {
+        $request->validate([
+            'reply_message' => 'required|string|min:5|max:1000',
+        ]);
+        $contact = Contact::findOrFail($id);
+        Mail::to($contact->email)->send(new ReplyToContactMail($contact->name, $request->reply_message));
+        return $this->sendSuccess('Reply Sent Successfully!');
     }
 }

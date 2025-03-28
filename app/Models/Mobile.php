@@ -16,7 +16,7 @@ class Mobile extends Model
         'title', 'brand_id', 'description', 'model_number', 'battery',
         'processor', 'storage', 'display', 'image_cover', 'price',
         'discount', 'operating_system', 'camera', 'network_support',
-        'release_year', 'stock_quantity', 'status'
+        'release_year', 'stock_quantity', 'status' , 'product_type'
     ];
     protected static function boot()
     {

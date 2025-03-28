@@ -9,8 +9,9 @@ class AccessoriesRequest extends FormRequest
     }
     public function rules(): array
     {
+        $accessoryId = $this->route('id');
          return [
-            'title'          => 'required|string|max:255',
+            'title'          => 'required|string|max:255|unique:accessories,title,' . $accessoryId ,
             'brand_id'       => 'required|exists:brands,id',
             'description'    => 'nullable|string',
             'battery'        => 'nullable|integer|min:100',
@@ -20,6 +21,7 @@ class AccessoriesRequest extends FormRequest
             'discount'       => 'nullable|integer|min:0|max:100',
             'stock_quantity' => 'nullable|integer|min:0',
             'status'         => 'required|in:available,out_of_stock,coming_soon',
+            
         ];
     }
 }
