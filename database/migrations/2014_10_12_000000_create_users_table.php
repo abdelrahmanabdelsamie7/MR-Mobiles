@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('phone', 15)->nullable();
             $table->string('address')->nullable();
             $table->string('password')->nullable();
-            $table->timestamps() ;
+            $table->timestamps();
         });
     }
     public function down(): void

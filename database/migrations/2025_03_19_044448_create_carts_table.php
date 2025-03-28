@@ -9,6 +9,7 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete()->cascadeOnUpdate();
             $table->decimal('total_price', 10, 2)->default(0);
+            $table->timestamps();
         });
     }
     public function down(): void
