@@ -12,7 +12,6 @@ class CartController extends Controller
     {
         $this->user = auth('api')->user();
     }
-    
     public function index()
     {
         $cart = Cart::where('user_id', $this->user->id)->with('cartItems')->first();
