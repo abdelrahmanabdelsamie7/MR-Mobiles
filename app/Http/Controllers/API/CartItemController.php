@@ -22,9 +22,15 @@ class CartItemController extends Controller
             }
             $mobile = Mobile::find($request->product_id);
             $productPrice = $mobile ? $mobile->final_price : null;
+            if ($mobile && $mobile->stock_quantity < $request->quantity) {
+                return $this->sendError('Not enough stock available. Only ' . $mobile->stock_quantity . ' items left.', 400);
+            }
         } elseif ($request->product_type === 'accessory') {
             $accessory = Accessory::find($request->product_id);
             $productPrice = $accessory ? $accessory->final_price : null;
+            if ($accessory && $accessory->stock_quantity < $request->quantity) {
+                return $this->sendError('Not enough stock available. Only ' . $accessory->stock_quantity . ' items left.', 400);
+            }
         }
         if (!$productPrice) {
             return $this->sendError('Product price not found', 404);

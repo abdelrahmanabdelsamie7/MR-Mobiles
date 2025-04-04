@@ -49,17 +49,12 @@ class PaymentController extends Controller
             if (!$user) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
-
             $cart = $user->cart()->with(['cartItems.product'])->first();
-
             if (!$cart || $cart->cartItems->isEmpty()) {
                 return response()->json(['error' => 'Cart is empty'], 400);
             }
-
-            // Create order and order items
             $order = $this->orderService->createOrderFromCart($cart, $user);
-
-            // Create payment record
+            $order->load(['orderItems.product', 'user']);
             $payment = Payment::create([
                 'user_id' => $user->id,
                 'order_id' => $order->id,
@@ -71,28 +66,20 @@ class PaymentController extends Controller
                     'cart_id' => $cart->id
                 ]
             ]);
-
-            // Get auth token
             $authToken = $this->paymobService->getAuthToken();
             Log::info('Successfully obtained auth token');
-
-            // Create Paymob order
             $merchantOrderId = 'CART-' . $cart->id . '-' . time();
             $orderData = $this->paymobService->createOrder($authToken, $cart, $merchantOrderId);
             $payment->update(['paymob_order_id' => $orderData['id']]);
-
-            // Create payment key
             $paymentKeyData = $this->paymobService->createPaymentKey(
                 $authToken,
                 $orderData['id'],
                 $cart->total_price,
                 $user
             );
-
             return response()->json([
                 'payment_url' => $this->paymobService->getPaymentUrl($paymentKeyData['token'])
             ]);
-
         } catch (\Exception $e) {
             Log::error('Payment error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
@@ -105,15 +92,13 @@ class PaymentController extends Controller
         try {
             $data = $request->all();
             Log::info('Received Paymob callback:', $data);
-
-            // Find the payment
-            $payment = Payment::where('paymob_order_id', $data['order'])->first();
+            $payment = Payment::where('paymob_order_id', $data['order'])
+                ->with(['order.orderItems.product', 'order.user'])
+                ->first();
             if (!$payment) {
                 Log::error('Payment not found for order:', ['order_id' => $data['order']]);
                 return response()->json(['error' => 'Payment not found'], 404);
             }
-
-            // Update payment status
             $payment->update([
                 'status' => $data['success'] ? 'completed' : 'failed',
                 'paid_at' => $data['success'] ? now() : null,
@@ -124,16 +109,11 @@ class PaymentController extends Controller
                     'last_four_digits' => $data['source_data']['last_four_digits'] ?? null
                 ])
             ]);
-
-            // Update order status
-            $this->orderService->updateOrderStatus(
-                $payment->order,
-                $data['success'] ? 'completed' : 'failed'
-            );
-
-            // Clear the cart if payment was successful
             if ($data['success']) {
+                $this->orderService->updateOrderStatus($payment->order, 'completed');
                 $this->orderService->clearUserCart($payment->order->user);
+            } else {
+                $this->orderService->updateOrderStatus($payment->order, 'failed');
             }
 
             return response()->json([
