@@ -1,12 +1,9 @@
 <?php
 namespace App\Http\Controllers\API;
-
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Traits\ResponseJsonTrait;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
 class OrderController extends Controller
 {
     use ResponseJsonTrait;
@@ -21,7 +18,7 @@ class OrderController extends Controller
     }
     public function show($id)
     {
-        $order = Order::where('id', $id)->where('user_id', Auth::id())->with('orderItems')->first();
+        $order = Order::where('id', $id)->where('user_id', Auth::id())->with('orderItems.product')->first();
         if (!$order) {
             return $this->sendError('Order not found', 404);
         }

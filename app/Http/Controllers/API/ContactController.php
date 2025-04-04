@@ -7,7 +7,6 @@ use App\traits\ResponseJsonTrait;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Requests\ContactRequest;
-
 class ContactController extends Controller
 {
     use ResponseJsonTrait;
@@ -36,7 +35,7 @@ class ContactController extends Controller
         $contact->delete();
         return $this->sendSuccess('Contact Data Removed Successfully');
     }
-    // Relt To Contact Message
+    // Rely To Contact Message
     public function reply(Request $request, $id)
     {
         $request->validate([

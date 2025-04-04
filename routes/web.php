@@ -1,18 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return view('welcome');
+});
+Route::match(['get', 'post'], '/payment/acceptance/post_pay', function(Request $request) {
+    return app()->make(\App\Http\Controllers\API\PaymentController::class)->handleCallback($request);
 });

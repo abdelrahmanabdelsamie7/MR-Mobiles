@@ -11,7 +11,7 @@ class MobileRequest extends FormRequest
     {
         $mobileId = $this->route('id');
         return [
-            'title' => 'required|string|max:255|unique:mobiles,title,' . $mobileId ,
+            'title' => 'required|string|max:255|unique:mobiles,title,' . $mobileId,
             'brand_id' => 'required|exists:brands,id',
             'model_number' => 'required|string|max:100',
             'description' => 'nullable|string',
@@ -27,7 +27,8 @@ class MobileRequest extends FormRequest
             'release_year' => 'required|integer|min:2000|max:' . date('Y'),
             'stock_quantity' => 'required|integer|min:0',
             'image_cover' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:4048',
-            'status'         => 'required|in:available,out_of_stock,coming_soon',
+            'status' => 'required|in:available,out_of_stock,coming_soon',
         ];
     }
+
 }

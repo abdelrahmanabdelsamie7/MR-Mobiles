@@ -2,25 +2,40 @@
 namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use App\Models\Order;
 
 class PaymentSuccessMail extends Mailable
 {
     use Queueable, SerializesModels;
-    public $amount;
-    public $cartId;
-    public function __construct($amount, $cartId)
+    public $order;
+    public function __construct(Order $order)
     {
-        $this->amount = $amount;
-        $this->cartId = $cartId;
+        $this->order = $order;
     }
-    public function build()
+    public function envelope(): Envelope
     {
-        return $this->subject('Payment Successful')
-            ->view('emails.payment_success')
-            ->with([
-                'amount' => $this->amount,
-                'cartId' => $this->cartId,
-            ]);
+        return new Envelope(
+            subject: 'تم استلام طلبك بنجاح - Mr. Mobiles',
+        );
+    }
+    public function content(): Content
+    {
+        return new Content(
+            view: 'emails.payment-success',
+            with: [
+                'order' => $this->order,
+                'user' => $this->order->user,
+                'items' => $this->order->orderItems,
+                'total' => $this->order->total_price,
+                'date' => $this->order->created_at->format('Y-m-d H:i:s'),
+            ],
+        );
+    }
+    public function attachments(): array
+    {
+        return [];
     }
 }

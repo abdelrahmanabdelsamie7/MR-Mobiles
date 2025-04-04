@@ -10,7 +10,7 @@ class MobileController extends Controller
     use ResponseJsonTrait;
     public function __construct()
     {
-        $this->middleware('auth:admins')->only(['store','update','destroy']);
+        $this->middleware('auth:admins')->only(['store', 'update', 'destroy']);
     }
     public function index()
     {
@@ -19,19 +19,14 @@ class MobileController extends Controller
     }
     public function show(string $id)
     {
-        $mobile = Mobile::with(['brand:id,name,image','colors', 'images'])
-            ->findOrFail($id);
-
-        return $this->sendSuccess('Mobile Retrieved Successfully!', $mobile);
+        $mobile = Mobile::with(['colors' ,'images'])->findOrFail($id);
+        return $this->sendSuccess('All Mobiles Retrieved Successfully!', $mobile);
     }
     public function store(MobileRequest $request)
     {
         $data = $request->validated();
         if ($request->hasFile('image_cover')) {
-            $originalName = $request->file('image_cover')->getClientOriginalName();
-            $imageName = time() . '_' . $originalName;
-            $request->file('image_cover')->move(public_path('uploads/mobiles'), $imageName);
-            $data['image_cover'] = asset('uploads/mobiles/' . $imageName);
+            $data['image_cover'] = $this->uploadImage($request->file('image_cover'));
         }
         $mobile = Mobile::create($data);
         return $this->sendSuccess('Mobile Added Successfully', $mobile, 201);
@@ -45,13 +40,19 @@ class MobileController extends Controller
             if (file_exists($oldImagePath)) {
                 unlink($oldImagePath);
             }
-            $originalName = $request->image_cover->getClientOriginalName();
-            $imageName = time() . '_' . $originalName;
-            $request->image_cover->move(public_path('uploads/mobiles'), $imageName);
-            $data['image_cover'] = asset('uploads/mobiles/' . $imageName);
+            $data['image_cover'] = $this->uploadImage($request->file('image_cover'));
         }
         $mobile->update($data);
         return $this->sendSuccess('Mobile Data Updated Successfully', $mobile, 200);
+    }
+    private function uploadImage($image)
+    {
+        if ($image) {
+            $imageName = uniqid() . '_' . $image->getClientOriginalName();
+            $image->move(public_path('uploads/mobiles'), $imageName);
+            return asset('uploads/mobiles/' . $imageName);
+        }
+        return null;
     }
     public function destroy($id)
     {

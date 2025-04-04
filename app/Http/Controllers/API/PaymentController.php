@@ -1,106 +1,170 @@
 <?php
 namespace App\Http\Controllers\API;
+use Exception;
 use Illuminate\Http\Request;
-use Stripe\Checkout\Session;
-use Stripe\Stripe;
-use Stripe\PaymentIntent;
-use App\Models\{Cart, Payment, Order, OrderItem};
-use App\Mail\PaymentSuccessMail;
 use App\Traits\ResponseJsonTrait;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Http;
+use App\Models\{Payment};
+use App\Services\{PaymobService, OrderService};
 class PaymentController extends Controller
 {
     use ResponseJsonTrait;
+    private $apiKey;
+    private $integrationId;
+    private $iframeId;
+    private $paymobService;
+    private $orderService;
+    public function __construct(PaymobService $paymobService, OrderService $orderService)
+    {
+        $this->apiKey = config('services.paymob.api_key');
+        $this->integrationId = config('services.paymob.integration_id');
+        $this->iframeId = config('services.paymob.iframe_id');
+        $this->paymobService = $paymobService;
+        $this->orderService = $orderService;
+    }
+    private function getAuthToken()
+    {
+        $response = Http::post('https://accept.paymob.com/api/auth/tokens', [
+            'api_key' => $this->apiKey
+        ]);
+
+        if (!$response->successful()) {
+            \Log::error('Failed to get auth token', [
+                'response_body' => $response->body(),
+                'response_json' => $response->json(),
+                'status' => $response->status(),
+                'api_key' => substr($this->apiKey, 0, 5) . '...' // Log partial API key for security
+            ]);
+            throw new \Exception('Failed to authenticate with payment provider: ' . ($response->json('detail') ?? 'Unknown error'));
+        }
+
+        return $response->json('token');
+    }
     public function createCheckoutSession(Request $request)
     {
-        if (!$request->has('cart_id')) {
-            return $this->sendError('Cart ID is required', 400);
-        }
-        $cart = Cart::find($request->cart_id);
-        if (!$cart) {
-            return $this->sendError('Cart not found', 404);
-        }
-        Stripe::setApiKey(env('STRIPE_SECRET'));
-        $checkout_session = Session::create([
-            'payment_method_types' => ['card'],
-            'line_items' => [
-                [
-                    'price_data' => [
-                        'currency' => 'egp',
-                        'product_data' => ['name' => 'Order #' . $cart->id],
-                        'unit_amount' => $cart->total_price * 100,
-                    ],
-                    'quantity' => 1,
-                ]
-            ],
-            'mode' => 'payment',
-            'metadata' => [
-                'cart_id' => $cart->id,
-            ],
-            'success_url' => env('APP_URL') . '/api/payment/success?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => env('APP_URL') . '/api/payment/cancel',
-        ]);
-        return response()->json(['url' => $checkout_session->url]);
-    }
-    public function success(Request $request)
-    {
-        if (!$request->has('session_id')) {
-            return $this->sendError('Session ID is required', 400);
-        }
-        Stripe::setApiKey(env('STRIPE_SECRET'));
-        $session = Session::retrieve($request->session_id);
-        $payment_intent_id = $session->payment_intent;
-        if (!$payment_intent_id) {
-            return $this->sendError('Payment Intent not found', 400);
-        }
-        $payment_intent = PaymentIntent::retrieve($payment_intent_id);
-        $customer_email = $payment_intent->charges->data[0]->billing_details->email
-            ?? $payment_intent->receipt_email
-            ?? $session->customer_details->email
-            ?? null;
-        if (!$customer_email || !filter_var($customer_email, FILTER_VALIDATE_EMAIL)) {
-            return $this->sendError('Invalid email address', 400);
-        }
-        $cart_id = $session->metadata->cart_id ?? null;
-        if (!$cart_id) {
-            return $this->sendError('Cart ID not found in metadata', 400);
-        }
-        $cart = Cart::with('cartItems.product')->find($cart_id);
-        if (!$cart) {
-            return $this->sendError('Cart not found', 404);
-        }
-        if ($cart->cartItems->isEmpty()) {
-            return $this->sendError('Cart is empty', 400);
-        }
-        $order = Order::create([
-            'user_id' => $cart->user_id,
-            'total_price' => $cart->total_price,
-            'status' => 'completed'
-        ]);
-        foreach ($cart->cartItems as $cartItem) {
-            OrderItem::create([
+        try {
+            $user = $request->user('api');
+            if (!$user) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            $cart = $user->cart()->with(['cartItems.product'])->first();
+
+            if (!$cart || $cart->cartItems->isEmpty()) {
+                return response()->json(['error' => 'Cart is empty'], 400);
+            }
+
+            // Create order and order items
+            $order = $this->orderService->createOrderFromCart($cart, $user);
+
+            // Create payment record
+            $payment = Payment::create([
+                'user_id' => $user->id,
                 'order_id' => $order->id,
-                'product_id' => $cartItem->product_id,
-                'product_type' => $cartItem->product_type,
-                'quantity' => $cartItem->quantity,
-                'price' => $cartItem->price,
+                'amount' => $cart->total_price,
+                'status' => 'pending',
+                'payment_method' => 'paymob',
+                'metadata' => [
+                    'order_id' => $order->id,
+                    'cart_id' => $cart->id
+                ]
             ]);
+
+            // Get auth token
+            $authToken = $this->paymobService->getAuthToken();
+            Log::info('Successfully obtained auth token');
+
+            // Create Paymob order
+            $merchantOrderId = 'CART-' . $cart->id . '-' . time();
+            $orderData = $this->paymobService->createOrder($authToken, $cart, $merchantOrderId);
+            $payment->update(['paymob_order_id' => $orderData['id']]);
+
+            // Create payment key
+            $paymentKeyData = $this->paymobService->createPaymentKey(
+                $authToken,
+                $orderData['id'],
+                $cart->total_price,
+                $user
+            );
+
+            return response()->json([
+                'payment_url' => $this->paymobService->getPaymentUrl($paymentKeyData['token'])
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Payment error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => 'Failed to create checkout session: ' . $e->getMessage()], 500);
         }
-        Payment::create([
-            'order_id' => $order->id,
-            'payment_method' => 'credit_card',
-            'transaction_id' => $payment_intent_id,
-            'amount' => $cart->total_price,
-            'status' => 'completed',
-        ]);
-        $cart->cartItems()->delete();
-        $cart->update(['total_price' => 0]);
-        Mail::to($customer_email)->send(new PaymentSuccessMail($order->total_price, $order->id));
-        return $this->sendSuccess('Payment successful and order created!', ['order_id' => $order->id]);
     }
-    public function cancel()
+    public function handleCallback(Request $request)
     {
-        return $this->sendSuccess('Payment cancelled', 200);
+        try {
+            $data = $request->all();
+            Log::info('Received Paymob callback:', $data);
+
+            // Find the payment
+            $payment = Payment::where('paymob_order_id', $data['order'])->first();
+            if (!$payment) {
+                Log::error('Payment not found for order:', ['order_id' => $data['order']]);
+                return response()->json(['error' => 'Payment not found'], 404);
+            }
+
+            // Update payment status
+            $payment->update([
+                'status' => $data['success'] ? 'completed' : 'failed',
+                'paid_at' => $data['success'] ? now() : null,
+                'metadata' => array_merge($payment->metadata ?? [], [
+                    'transaction_id' => $data['id'] ?? null,
+                    'payment_method' => $data['source_data']['sub_type'] ?? null,
+                    'card_type' => $data['source_data']['card_subtype'] ?? null,
+                    'last_four_digits' => $data['source_data']['last_four_digits'] ?? null
+                ])
+            ]);
+
+            // Update order status
+            $this->orderService->updateOrderStatus(
+                $payment->order,
+                $data['success'] ? 'completed' : 'failed'
+            );
+
+            // Clear the cart if payment was successful
+            if ($data['success']) {
+                $this->orderService->clearUserCart($payment->order->user);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Payment completed successfully',
+                'payment_id' => $payment->id,
+                'order_id' => $payment->order->id
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Payment callback error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            return response()->json(['error' => 'Failed to process payment callback'], 500);
+        }
+    }
+    private function getBillingData($user)
+    {
+        return [
+            "first_name" => $user->first_name ?? 'Test',
+            "last_name" => $user->last_name ?? 'User',
+            "email" => $user->email ?? 'test@example.com',
+            "phone_number" => $user->phone_number ?? '01000000000',
+            "country" => $user->country ?? 'EG',
+            "city" => $user->city ?? 'Cairo',
+            "street" => $user->street ?? 'Nasr City',
+            "apartment" => $user->apartment ?? 'N/A',
+            "floor" => $user->floor ?? 'N/A',
+            "building" => $user->building ?? 'N/A',
+            "postal_code" => $user->postal_code ?? '12345'
+        ];
     }
 }

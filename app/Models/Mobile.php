@@ -6,21 +6,37 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\File;
 use App\Traits\UsesUuid;
-use App\Models\{Brand, Category, MobileColor, MobileImage, Wishlist, CartItem};
+use App\Models\{Brand, OrderItem, MobileColor, MobileImage, Wishlist, CartItem};
 
 class Mobile extends Model
 {
     use HasFactory, UsesUuid;
     protected $table = 'mobiles';
     protected $fillable = [
-        'title', 'brand_id', 'description', 'model_number', 'battery',
-        'processor', 'storage', 'display', 'image_cover', 'price',
-        'discount', 'operating_system', 'camera', 'network_support',
-        'release_year', 'stock_quantity', 'status' , 'product_type'
+        'title',
+        'brand_id',
+        'description',
+        'model_number',
+        'battery',
+        'processor',
+        'storage',
+        'display',
+        'image_cover',
+        'price',
+        'discount',
+        'operating_system',
+        'camera',
+        'network_support',
+        'release_year',
+        'stock_quantity',
+        'status',
+        'product_type',
+        'final_price'
     ];
     protected static function boot()
     {
         parent::boot();
+
         static::deleting(function ($mobile) {
             foreach ($mobile->colors as $color) {
                 if ($color->image && basename($color->image) !== 'default.jpg') {
@@ -35,6 +51,13 @@ class Mobile extends Model
             $mobile->colors()->delete();
             $mobile->images()->delete();
         });
+    }
+    public function getFinalPriceAttribute()
+    {
+        if ($this->discount) {
+            return $this->price - (($this->discount / 100) * $this->price);
+        }
+        return $this->price;
     }
     public function brand()
     {
@@ -55,5 +78,9 @@ class Mobile extends Model
     public function cartItems()
     {
         return $this->morphMany(CartItem::class, 'product');
+    }
+    public function orderItems()
+    {
+        return $this->morphMany(OrderItem::class, 'product');
     }
 }

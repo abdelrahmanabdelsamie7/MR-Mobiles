@@ -1,6 +1,6 @@
 <?php
 namespace App\Models;
-use App\Models\{Cart,Wishlist};
+use App\Models\{Cart, Wishlist};
 use App\traits\UsesUuid;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
@@ -9,25 +9,32 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable implements JWTSubject,MustVerifyEmail
+class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable , UsesUuid;
+    use HasApiTokens, HasFactory, Notifiable, UsesUuid;
     protected $fillable = [
-        'name',
         'email',
-        'phone',
-        'address',
         'password',
+        'first_name',
+        'last_name',
+        'phone_number',
+        'country',
+        'city',
+        'street',
+        'apartment',
+        'floor',
+        'building',
+        'postal_code',
         'verification_token',
         'verification_token_expires_at',
     ];
     protected $hidden = [
         'password',
         'remember_token',
-        'verification_token',
     ];
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password' => 'hashed',
     ];
     // User Relationships
     protected static function boot()
@@ -52,5 +59,42 @@ class User extends Authenticatable implements JWTSubject,MustVerifyEmail
     public function getJWTCustomClaims()
     {
         return [];
+    }
+    // Relationships
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+    // Accessors
+    public function getFullNameAttribute()
+    {
+        return $this->first_name . ' ' . $this->last_name;
+    }
+    public function getFullAddressAttribute()
+    {
+        $address = [];
+        if ($this->street)
+            $address[] = $this->street;
+        if ($this->apartment)
+            $address[] = 'Apartment: ' . $this->apartment;
+        if ($this->floor)
+            $address[] = 'Floor: ' . $this->floor;
+        if ($this->building)
+            $address[] = 'Building: ' . $this->building;
+        if ($this->city)
+            $address[] = $this->city;
+        if ($this->postal_code)
+            $address[] = $this->postal_code;
+        if ($this->country)
+            $address[] = $this->country;
+        return implode(', ', $address);
+    }
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new \App\Notifications\CustomVerifyEmail);
     }
 }

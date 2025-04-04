@@ -7,10 +7,8 @@ use Illuminate\Queue\SerializesModels;
 class VerifyEmail extends Mailable
 {
     use Queueable, SerializesModels;
-
     public $user;
     public $verificationUrl;
-
     public function __construct($user)
     {
         $this->user = $user;
@@ -21,7 +19,7 @@ class VerifyEmail extends Mailable
         return $this->subject('Verify Your Email')
             ->view('emails.verify-email')
             ->with([
-                'userName' => $this->user->name,
+                'userName' => $this->user->first_name . $this->user->last_name,
                 'verificationUrl' => $this->verificationUrl,
             ]);
     }

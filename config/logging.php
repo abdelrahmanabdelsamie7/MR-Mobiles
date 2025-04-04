@@ -50,11 +50,18 @@ return [
     |
     */
 
+    
     'channels' => [
         'stack' => [
             'driver' => 'stack',
             'channels' => ['single'],
             'ignore_exceptions' => false,
+        ],
+
+        'paymob' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/paymob.log'),
+            'level' => 'debug',
         ],
 
         'single' => [

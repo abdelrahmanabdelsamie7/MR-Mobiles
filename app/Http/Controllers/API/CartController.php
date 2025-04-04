@@ -12,19 +12,19 @@ class CartController extends Controller
     {
         $this->user = auth('api')->user();
     }
-    public function index()
-    {
-        $cart = Cart::where('user_id', $this->user->id)->with('cartItems')->first();
-        if (!$cart || optional($cart->cartItems)->isEmpty()) {
-            return $this->sendSuccess("Cart is empty!");
-        }
-        return $this->sendSuccess('Cart Retrieved Successfully!', $cart);
-    }
     public function store()
     {
         $cart = Cart::firstOrCreate(['user_id' => $this->user->id]);
 
         return $this->sendSuccess('Cart Created Successfully!', $cart, 201);
+    }
+     public function index()
+    {
+        $cart = Cart::where('user_id', $this->user->id)->with('cartItems.product')->first();
+        if (!$cart || optional($cart->cartItems)->isEmpty()) {
+            return $this->sendSuccess("Cart is empty!");
+        }
+        return $this->sendSuccess('Cart Retrieved Successfully!', $cart);
     }
     public function deleteItems()
     {

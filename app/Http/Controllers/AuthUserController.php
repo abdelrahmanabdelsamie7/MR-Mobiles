@@ -41,21 +41,35 @@ class AuthUserController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|between:2,100',
             'email' => 'required|string|email|max:100|unique:users',
-            'phone' => 'required|string|min:8|max:15|regex:/^[0-9]+$/',
-            "address" => 'required|string',
-            'password' => 'required|string|min:6',
+            'password' => 'required|string|min:6|confirmed',
+            'first_name' => 'required|string|max:50',
+            'last_name' => 'required|string|max:50',
+            'phone_number' => 'required|string|min:8|max:15|regex:/^[0-9]+$/',
+            'country' => 'required|string|max:50',
+            'city' => 'required|string|max:50',
+            'street' => 'required|string|max:100',
+            'apartment' => 'nullable|string|max:10',
+            'floor' => 'nullable|string|max:10',
+            'building' => 'nullable|string|max:10',
+            'postal_code' => 'nullable|string|max:20',
         ]);
         if ($validator->fails()) {
             return response()->json($validator->errors()->toJson(), 400);
         }
-        $verificationToken = Str::random(60);
+        $verificationToken = bin2hex(random_bytes(30));
         $user = User::create([
-            'name' => $request->get('name'),
-            'email' => $request->get('email'),
-            'phone' => $request->get('phone'),
-            "address" => $request->get('address'),
+            'email' => $request->email,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'phone_number' => $request->phone_number,
+            'country' => $request->country,
+            'city' => $request->city,
+            'street' => $request->street,
+            'apartment' => $request->apartment,
+            'floor' => $request->floor,
+            'building' => $request->building,
+            'postal_code' => $request->postal_code,
             'password' => Hash::make($request->get('password')),
             'verification_token' => $verificationToken,
             'verification_token_expires_at' => now()->addHours(3),
@@ -67,7 +81,11 @@ class AuthUserController extends Controller
     }
     public function verifyEmail($token)
     {
+        if (empty($token)) {
+            return response()->json(['error' => 'Verification token is required'], 400);
+        }
         $user = User::where('verification_token', $token)
+            ->whereNull('email_verified_at')
             ->where('verification_token_expires_at', '>', now())
             ->first();
         if (!$user) {
@@ -76,8 +94,18 @@ class AuthUserController extends Controller
         $user->email_verified_at = now();
         $user->verification_token = null;
         $user->verification_token_expires_at = null;
-        $user->save();
-        return response()->json(['message' => 'Email verified successfully , Start Now Go To Login'], 200);
+        if (!$user->save()) {
+            return response()->json(['error' => 'Failed to verify email. Please try again.'], 500);
+        }
+        return response()->json([
+            'message' => 'Email verified successfully. You can now log in.',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'email_verified_at' => $user->email_verified_at
+            ]
+        ], 200);
     }
     public function resendVerification(Request $request)
     {

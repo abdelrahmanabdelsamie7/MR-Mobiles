@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->string('display');
             $table->decimal('price', 10, 2);
             $table->integer('discount')->nullable()->default(0);
+            $table->decimal('final_price', 10, 2)->nullable();
             $table->string('operating_system');
             $table->string('camera')->nullable();
             $table->string('network_support');

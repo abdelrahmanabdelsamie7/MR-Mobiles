@@ -7,11 +7,16 @@ return new class extends Migration {
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('order_id')->constrained('orders')->cascadeOnDelete()->cascadeOnUpdate();
-            $table->enum('payment_method', ['credit_card', 'cash_on_delivery']);
-            $table->string('transaction_id')->nullable();
+            $table->uuid('order_id');
+            $table->uuid('user_id');
             $table->decimal('amount', 10, 2);
-            $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');
+            $table->string('paymob_order_id')->nullable();
+            $table->string('status')->default('pending');
+            $table->string('payment_method');
+            $table->string('transaction_id')->nullable();
+            $table->text('error_message')->nullable();
+            $table->json('metadata')->nullable();
+            $table->timestamp('paid_at')->nullable();
             $table->timestamps();
         });
     }

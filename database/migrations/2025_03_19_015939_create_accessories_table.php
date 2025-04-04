@@ -14,7 +14,8 @@ return new class extends Migration {
             $table->string('color')->nullable();
             $table->string('image');
             $table->decimal('price', 10, 2);
-            $table->integer('discount')->nullable()->default(0);;
+            $table->integer('discount')->nullable()->default(0);
+            $table->decimal('final_price', 10, 2)->nullable();
             $table->integer('stock_quantity')->default(0);
             $table->enum('status', ['available', 'out_of_stock', 'coming_soon'])->default('available');
             $table->string('product_type')->default('accessory');

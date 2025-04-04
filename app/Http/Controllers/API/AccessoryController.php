@@ -11,7 +11,7 @@ class AccessoryController extends Controller
     use ResponseJsonTrait;
     public function __construct()
     {
-        $this->middleware('auth:admins')->only(['store','update','destroy']);
+        $this->middleware('auth:admins')->only(['store', 'update', 'destroy']);
     }
     public function index()
     {
@@ -27,8 +27,7 @@ class AccessoryController extends Controller
     {
         $data = $request->validated();
         if ($request->hasFile('image')) {
-            $originalName = $request->file('image')->getClientOriginalName();
-            $imageName = time() . '_' . $originalName;
+            $imageName = uniqid() . '_' . $request->file('image')->getClientOriginalName(); // استخدم uniqid أو UUID هنا
             $request->file('image')->move(public_path('uploads/accessories'), $imageName);
             $data['image'] = asset('uploads/accessories/' . $imageName);
         }
@@ -44,8 +43,7 @@ class AccessoryController extends Controller
             if (file_exists($oldImagePath)) {
                 unlink($oldImagePath);
             }
-            $originalName = $request->image->getClientOriginalName();
-            $imageName = time() . '_' . $originalName;
+            $imageName = uniqid() . '_' . $request->image->getClientOriginalName();
             $request->image->move(public_path('uploads/accessories'), $imageName);
             $data['image'] = asset('uploads/accessories/' . $imageName);
         }
@@ -56,8 +54,7 @@ class AccessoryController extends Controller
     {
         $accessory = Accessory::findOrFail($id);
         if ($accessory->image && !str_contains($accessory->image, 'default.jpg')) {
-            $imageName = basename($accessory->image);
-            $imagePath = public_path("uploads/accessories/" . $imageName);
+            $imagePath = public_path("uploads/accessories/" . basename($accessory->image));
             if (File::exists($imagePath)) {
                 File::delete($imagePath);
             }

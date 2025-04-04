@@ -21,7 +21,7 @@ class AccessoriesRequest extends FormRequest
             'discount'       => 'nullable|integer|min:0|max:100',
             'stock_quantity' => 'nullable|integer|min:0',
             'status'         => 'required|in:available,out_of_stock,coming_soon',
-            
         ];
     }
+
 }

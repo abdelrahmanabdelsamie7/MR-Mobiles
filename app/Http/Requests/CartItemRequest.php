@@ -2,7 +2,6 @@
 namespace App\Http\Requests;
 use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
-
 class CartItemRequest extends FormRequest
 {
     public function authorize(): bool
@@ -12,8 +11,8 @@ class CartItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-           'cart_id' => 'uuid|exists:carts,id',
-             'product_id' => [
+            'cart_id' => 'uuid|exists:carts,id',
+            'product_id' => [
                 'required',
                 'uuid',
                 function ($attribute, $value, $fail) {
@@ -26,8 +25,21 @@ class CartItemRequest extends FormRequest
                 },
             ],
             'product_type' => ['required', Rule::in(['mobile', 'accessory'])],
+            'product_color_id' => [
+                'nullable',
+                'uuid',
+                'exists:mobile_colors,id',
+                function ($attribute, $value, $fail) {
+                    if ($this->product_type === 'mobile') {
+                        if (!$value) {
+                            $fail('The product_color_id is required for mobiles.');
+                        }
+                    }
+                },
+            ],
             'quantity' => 'required|integer|min:1',
             'price' => 'numeric|min:0',
         ];
     }
+
 }
