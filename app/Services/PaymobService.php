@@ -47,14 +47,13 @@ class PaymobService
                     throw new \Exception('Product not found for cart item');
                 }
                 return [
-                    'name' => $product->name ?? 'Unknown Product',
+                    'name' => $product->title,
                     'amount_cents' => (int)($item->price * 100),
                     'description' => $product->description ?? '',
                     'quantity' => (int)$item->quantity
                 ];
             })->toArray()
         ];
-
         Log::info('Attempting to create Paymob order with data:', [
             'order_data' => $orderData,
             'cart_total' => $cart->total_price,
@@ -80,32 +79,15 @@ class PaymobService
             'amount_cents' => (int)($amount * 100),
             'expiration' => 3600,
             'order_id' => $orderId,
-            'billing_data' => [
-                'first_name' => $user->name ?? 'Customer',
-                'last_name' => 'User',
-                'email' => $user->email ?? 'customer@example.com',
-                'phone_number' => $user->phone ?? '01000000000',
-                'apartment' => 'NA',
-                'floor' => 'NA',
-                'street' => 'NA',
-                'building' => 'NA',
-                'shipping_method' => 'NA',
-                'postal_code' => 'NA',
-                'city' => 'NA',
-                'country' => 'NA',
-                'state' => 'NA'
-            ],
+            'billing_data' => $this->getBillingData($user),
             'currency' => 'EGP',
             'integration_id' => $this->integrationId
         ];
-
         Log::info('Attempting to create payment key with data:', [
             'payment_key_data' => $paymentKeyData,
             'order_id' => $orderId
         ]);
-
         $response = Http::post('https://accept.paymob.com/api/acceptance/payment_keys', $paymentKeyData);
-
         if (!$response->successful()) {
             Log::error('Failed to create payment key', [
                 'response_body' => $response->body(),
@@ -116,7 +98,6 @@ class PaymobService
             ]);
             throw new \Exception('Failed to create payment key: ' . ($response->json('detail') ?? $response->body() ?? 'Unknown error'));
         }
-
         return $response->json();
     }
     public function getPaymentUrl($paymentToken)
@@ -126,17 +107,17 @@ class PaymobService
     private function getBillingData(User $user)
     {
         return [
-            "first_name" => $user->first_name ?? 'Test',
-            "last_name" => $user->last_name ?? 'User',
-            "email" => $user->email ?? 'test@example.com',
-            "phone_number" => $user->phone_number ?? '01000000000',
-            "country" => $user->country ?? 'EG',
-            "city" => $user->city ?? 'Cairo',
-            "street" => $user->street ?? 'Nasr City',
-            "apartment" => $user->apartment ?? 'N/A',
-            "floor" => $user->floor ?? 'N/A',
-            "building" => $user->building ?? 'N/A',
-            "postal_code" => $user->postal_code ?? '12345'
+            "first_name" => $user->first_name,
+            "last_name" => $user->last_name,
+            "email" => $user->email,
+            "phone_number" => $user->phone_number,
+            "country" => $user->country,
+            "city" => $user->city,
+            "street" => $user->street,
+            "apartment" => $user->apartment,
+            "floor" => $user->floor,
+            "building" => $user->building,
+            "postal_code" => $user->postal_code
         ];
     }
 }

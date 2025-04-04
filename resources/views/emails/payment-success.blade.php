@@ -95,7 +95,6 @@
                         <p>الكمية: {{ $item->quantity }}</p>
                         <p>السعر: {{ number_format($item->price, 2) }} جنيه</p>
                         @if ($item->product)
-                            <p>الكمية المتاحة: {{ $item->product->stock_quantity }}</p>
                             <p>الوصف: {{ $item->product->description }}</p>
                         @endif
                     </div>

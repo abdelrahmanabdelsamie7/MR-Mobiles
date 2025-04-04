@@ -99,30 +99,33 @@ class PaymentController extends Controller
                 Log::error('Payment not found for order:', ['order_id' => $data['order']]);
                 return response()->json(['error' => 'Payment not found'], 404);
             }
+
+            $errorMessage = $data['data']['message'] ?? 'Payment failed';
+            $isSuccess = isset($data['success']) && $data['success'] === true && !isset($data['error_occured']);
+
             $payment->update([
-                'status' => $data['success'] ? 'completed' : 'failed',
-                'paid_at' => $data['success'] ? now() : null,
+                'status' => $isSuccess ? 'completed' : 'failed',
+                'paid_at' => $isSuccess ? now() : null,
                 'metadata' => array_merge($payment->metadata ?? [], [
                     'transaction_id' => $data['id'] ?? null,
                     'payment_method' => $data['source_data']['sub_type'] ?? null,
                     'card_type' => $data['source_data']['card_subtype'] ?? null,
-                    'last_four_digits' => $data['source_data']['last_four_digits'] ?? null
+                    'last_four_digits' => $data['source_data']['last_four_digits'] ?? null,
+                    'error_message' => $errorMessage
                 ])
             ]);
-            if ($data['success']) {
+
+            if ($isSuccess) {
                 $this->orderService->updateOrderStatus($payment->order, 'completed');
                 $this->orderService->clearUserCart($payment->order->user);
+                return view('payment.success', ['order_id' => $payment->order->id]);
             } else {
                 $this->orderService->updateOrderStatus($payment->order, 'failed');
+                return view('payment.failed', [
+                    'error_message' => $errorMessage,
+                    'order_id' => $payment->order->id
+                ]);
             }
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Payment completed successfully',
-                'payment_id' => $payment->id,
-                'order_id' => $payment->order->id
-            ]);
-
         } catch (\Exception $e) {
             Log::error('Payment callback error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
@@ -134,17 +137,17 @@ class PaymentController extends Controller
     private function getBillingData($user)
     {
         return [
-            "first_name" => $user->first_name ?? 'Test',
-            "last_name" => $user->last_name ?? 'User',
-            "email" => $user->email ?? 'test@example.com',
-            "phone_number" => $user->phone_number ?? '01000000000',
-            "country" => $user->country ?? 'EG',
-            "city" => $user->city ?? 'Cairo',
-            "street" => $user->street ?? 'Nasr City',
-            "apartment" => $user->apartment ?? 'N/A',
-            "floor" => $user->floor ?? 'N/A',
-            "building" => $user->building ?? 'N/A',
-            "postal_code" => $user->postal_code ?? '12345'
+            "first_name" => $user->first_name,
+            "last_name" => $user->last_name,
+            "email" => $user->email,
+            "phone_number" => $user->phone_number,
+            "country" => $user->country,
+            "city" => $user->city,
+            "street" => $user->street,
+            "apartment" => $user->apartment,
+            "floor" => $user->floor,
+            "building" => $user->building,
+            "postal_code" => $user->postal_code
         ];
     }
 }
