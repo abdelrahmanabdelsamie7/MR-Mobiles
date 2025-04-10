@@ -98,7 +98,6 @@ class PaymentController extends Controller
                 'request_url' => $request->fullUrl()
             ]);
 
-            // Extract data from query parameters
             $orderId = $data['order'] ?? null;
             $merchantOrderId = $data['merchant_order_id'] ?? null;
             $success = $data['success'] ?? false;
@@ -106,7 +105,6 @@ class PaymentController extends Controller
             $txnResponseCode = $data['txn_response_code'] ?? null;
             $dataMessage = $data['data.message'] ?? null;
 
-            // Log raw data for debugging
             Log::info('Raw Paymob callback data:', [
                 'order_id' => $orderId,
                 'merchant_order_id' => $merchantOrderId,
@@ -117,7 +115,7 @@ class PaymentController extends Controller
                 'full_data' => $data
             ]);
 
-            // New success conditions based on Paymob dashboard
+
             $isSuccess = (
                 $success === true ||
                 $txnResponseCode === 'APPROVED' ||

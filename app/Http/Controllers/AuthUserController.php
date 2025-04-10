@@ -2,12 +2,9 @@
 namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\{Hash, Validator,Mail};
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\VerifyEmail;
-use App\Mail\ResetPassword;
+use App\Mail\{VerifyEmail, ResetPassword};
 class AuthUserController extends Controller
 {
     public function __construct()
