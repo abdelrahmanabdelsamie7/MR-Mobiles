@@ -22,8 +22,17 @@ class CartItemController extends Controller
             }
             $mobile = Mobile::find($request->product_id);
             $productPrice = $mobile ? $mobile->final_price : null;
-            if ($mobile && $mobile->stock_quantity < $request->quantity) {
-                return $this->sendError('Not enough stock available. Only ' . $mobile->stock_quantity . ' items left.', 400);
+
+            // Get total quantity of this mobile in cart (across all colors)
+            $totalQuantityInCart = CartItem::where([
+                'cart_id' => $cart->id,
+                'product_id' => $request->product_id,
+                'product_type' => 'mobile'
+            ])->sum('quantity');
+
+            // Check if adding new quantity would exceed stock
+            if ($mobile && ($totalQuantityInCart + $request->quantity) > $mobile->stock_quantity) {
+                return $this->sendError('Not enough stock available. Only ' . $mobile->stock_quantity . ' items left. You already have ' . $totalQuantityInCart . ' in your cart.', 400);
             }
         } elseif ($request->product_type === 'accessory') {
             $accessory = Accessory::find($request->product_id);
@@ -39,7 +48,9 @@ class CartItemController extends Controller
             'cart_id' => $cart->id,
             'product_id' => $request->product_id,
             'product_type' => $request->product_type
-        ])->first();
+        ])->when($request->product_type === 'mobile', function ($query) use ($request) {
+            return $query->where('product_color_id', $request->product_color_id);
+        })->first();
 
         if ($cartItem) {
             $cartItem->increment('quantity', $request->quantity);
@@ -63,6 +74,29 @@ class CartItemController extends Controller
             return $this->sendError('Unauthorized: You do not own this cart item', 403);
         }
         $request->validate(['quantity' => 'required|integer|min:1']);
+
+        if ($cartItem->product_type === 'mobile') {
+            $mobile = Mobile::find($cartItem->product_id);
+            if ($mobile) {
+                // Get total quantity of this mobile in cart (across all colors)
+                $totalQuantityInCart = CartItem::where([
+                    'cart_id' => $cartItem->cart_id,
+                    'product_id' => $cartItem->product_id,
+                    'product_type' => 'mobile'
+                ])->where('id', '!=', $cartItem->id)->sum('quantity');
+
+                // Check if new quantity would exceed stock
+                if (($totalQuantityInCart + $request->quantity) > $mobile->stock_quantity) {
+                    return $this->sendError('Not enough stock available. Only ' . $mobile->stock_quantity . ' items left. You already have ' . $totalQuantityInCart . ' in your cart.', 400);
+                }
+            }
+        } elseif ($cartItem->product_type === 'accessory') {
+            $accessory = Accessory::find($cartItem->product_id);
+            if ($accessory && $request->quantity > $accessory->stock_quantity) {
+                return $this->sendError('Not enough stock available. Only ' . $accessory->stock_quantity . ' items left.', 400);
+            }
+        }
+
         $cartItem->update(['quantity' => $request->quantity]);
         $cartItem->cart->updateTotalPrice();
         return $this->sendSuccess('Product quantity updated', $cartItem);

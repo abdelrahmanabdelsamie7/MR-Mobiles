@@ -27,6 +27,7 @@ Route::middleware('api')->prefix('admin')->group(function () {
 });
 
 Route::apiResource('brands', BrandController::class);
+Route::match(['post', 'put', 'patch'], 'brands/{id}', [BrandController::class, 'update']);
 Route::apiResource('mobiles', MobileController::class);
 Route::apiResource('mobile-colors', MobileColorController::class);
 Route::apiResource('mobile-images', MobileImageController::class);
@@ -40,7 +41,7 @@ Route::post('/contact-us/{id}/reply', [ContactController::class, 'reply'])->midd
 
 Route::get('statistics', [StatisticsController::class, 'getStatistics']);
 // Update Image
-Route::match(['post', 'put', 'patch'], 'brands/{id}', [BrandController::class, 'update']);
+
 Route::match(['post', 'put', 'patch'], 'mobiles/{id}', [MobileController::class, 'update']);
 Route::match(['post', 'put', 'patch'], 'mobile-colors/{id}', [MobileColorController::class, 'update']);
 Route::match(['post', 'put', 'patch'], 'mobile-images/{id}', [MobileImageController::class, 'update']);
@@ -69,4 +70,3 @@ Route::get('/api/debug/payment', function (Request $request) {
     ]);
     return response()->json(['status' => 'debug', 'data' => $request->all()]);
 })->withoutMiddleware(['auth:api', 'throttle:api']);
-

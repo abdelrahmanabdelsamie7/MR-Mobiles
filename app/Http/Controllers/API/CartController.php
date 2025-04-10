@@ -15,7 +15,7 @@ class CartController extends Controller
     public function store()
     {
         $cart = Cart::firstOrCreate(['user_id' => $this->user->id]);
-
+        $cart->updateTotalPrice();
         return $this->sendSuccess('Cart Created Successfully!', $cart, 201);
     }
      public function index()
@@ -30,7 +30,7 @@ class CartController extends Controller
     {
         $cart = Cart::where('user_id', $this->user->id)->firstOrFail();
         $cart->cartItems()->delete();
-        $cart->update(['total_price' => 0]);
+        $cart->updateTotalPrice();
         return $this->sendSuccess('Cart items deleted successfully!');
     }
 }

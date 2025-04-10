@@ -13,12 +13,18 @@ class OrderController extends Controller
     }
     public function index()
     {
-        $orders = Order::where('user_id', Auth::id())->get();
+        $orders = Order::where('user_id', Auth::id())
+            ->where('status', 'completed')
+            ->get();
         return $this->sendSuccess('Orders retrieved successfully', $orders);
     }
     public function show($id)
     {
-        $order = Order::where('id', $id)->where('user_id', Auth::id())->with('orderItems.product')->first();
+        $order = Order::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->where('status', 'completed')
+            ->with('orderItems.product')
+            ->first();
         if (!$order) {
             return $this->sendError('Order not found', 404);
         }

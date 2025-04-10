@@ -91,47 +91,134 @@ class PaymentController extends Controller
     {
         try {
             $data = $request->all();
-            Log::info('Received Paymob callback:', $data);
-            $payment = Payment::where('paymob_order_id', $data['order'])
+            Log::info('Received Paymob callback - Full Request Data:', [
+                'request_data' => $data,
+                'request_headers' => $request->headers->all(),
+                'request_method' => $request->method(),
+                'request_url' => $request->fullUrl()
+            ]);
+
+            // Extract data from query parameters
+            $orderId = $data['order'] ?? null;
+            $merchantOrderId = $data['merchant_order_id'] ?? null;
+            $success = $data['success'] ?? false;
+            $errorOccurred = $data['error_occured'] ?? false;
+            $txnResponseCode = $data['txn_response_code'] ?? null;
+            $dataMessage = $data['data.message'] ?? null;
+
+            // Log raw data for debugging
+            Log::info('Raw Paymob callback data:', [
+                'order_id' => $orderId,
+                'merchant_order_id' => $merchantOrderId,
+                'success' => $success,
+                'error_occured' => $errorOccurred,
+                'txn_response_code' => $txnResponseCode,
+                'data_message' => $dataMessage,
+                'full_data' => $data
+            ]);
+
+            // New success conditions based on Paymob dashboard
+            $isSuccess = (
+                $success === true ||
+                $txnResponseCode === 'APPROVED' ||
+                $txnResponseCode === '000' ||
+                (isset($data['status']) && $data['status'] === 'Paid')
+            );
+
+            Log::info('Payment validation result:', [
+                'success' => $success,
+                'error_occurred' => $errorOccurred,
+                'txn_response_code' => $txnResponseCode,
+                'is_success' => $isSuccess,
+                'message' => $dataMessage,
+                'merchant_order_id' => $merchantOrderId,
+                'transaction_id' => $data['id'] ?? null,
+                'validation_conditions' => [
+                    'success_is_true' => $success === true,
+                    'txn_response_code_is_approved' => in_array($txnResponseCode, ['APPROVED', '000']),
+                    'status_is_paid' => isset($data['status']) && $data['status'] === 'Paid'
+                ]
+            ]);
+
+            $payment = Payment::where('paymob_order_id', $orderId)
                 ->with(['order.orderItems.product', 'order.user'])
                 ->first();
+
             if (!$payment) {
-                Log::error('Payment not found for order:', ['order_id' => $data['order']]);
+                Log::error('Payment not found in database:', [
+                    'order_id' => $orderId,
+                    'merchant_order_id' => $merchantOrderId,
+                    'search_criteria' => ['paymob_order_id' => $orderId]
+                ]);
                 return response()->json(['error' => 'Payment not found'], 404);
             }
 
-            $errorMessage = $data['data']['message'] ?? 'Payment failed';
-            $isSuccess = isset($data['success']) && $data['success'] === true && !isset($data['error_occured']);
+            Log::info('Found payment record:', [
+                'payment_id' => $payment->id,
+                'order_id' => $payment->order_id,
+                'status' => $payment->status,
+                'amount' => $payment->amount,
+                'paymob_amount' => ($data['amount_cents'] ?? 0) / 100,
+                'paymob_order_id' => $payment->paymob_order_id,
+                'metadata' => $payment->metadata
+            ]);
 
+            // Update payment status
             $payment->update([
                 'status' => $isSuccess ? 'completed' : 'failed',
                 'paid_at' => $isSuccess ? now() : null,
                 'metadata' => array_merge($payment->metadata ?? [], [
                     'transaction_id' => $data['id'] ?? null,
-                    'payment_method' => $data['source_data']['sub_type'] ?? null,
-                    'card_type' => $data['source_data']['card_subtype'] ?? null,
-                    'last_four_digits' => $data['source_data']['last_four_digits'] ?? null,
-                    'error_message' => $errorMessage
+                    'payment_method' => $data['source_data.sub_type'] ?? null,
+                    'card_type' => $data['source_data.sub_type'] ?? null,
+                    'last_four_digits' => $data['source_data.pan'] ?? null,
+                    'error_message' => $dataMessage,
+                    'paymob_response' => [
+                        'merchant_order_id' => $merchantOrderId,
+                        'transaction_id' => $data['id'] ?? null,
+                        'amount_cents' => $data['amount_cents'] ?? null,
+                        'currency' => $data['currency'] ?? null,
+                        'created_at' => $data['created_at'] ?? null,
+                        'raw_response' => $data
+                    ]
                 ])
+            ]);
+
+            Log::info('Payment status updated:', [
+                'payment_id' => $payment->id,
+                'new_status' => $isSuccess ? 'completed' : 'failed',
+                'paid_at' => $isSuccess ? now() : null,
+                'updated_metadata' => $payment->metadata
             ]);
 
             if ($isSuccess) {
                 $this->orderService->updateOrderStatus($payment->order, 'completed');
                 $this->orderService->clearUserCart($payment->order->user);
-                return view('payment.success', ['order_id' => $payment->order->id]);
+                Log::info('Payment successful - Order updated:', [
+                    'order_id' => $payment->order->id,
+                    'new_status' => 'completed'
+                ]);
+                return redirect()->route('payment.success', ['order_id' => $payment->order->id]);
             } else {
                 $this->orderService->updateOrderStatus($payment->order, 'failed');
-                return view('payment.failed', [
-                    'error_message' => $errorMessage,
+                Log::info('Payment failed - Order updated:', [
+                    'order_id' => $payment->order->id,
+                    'new_status' => 'failed',
+                    'error_message' => $dataMessage
+                ]);
+                return redirect()->route('payment.failed', [
+                    'error_message' => $dataMessage ?? 'Payment failed',
                     'order_id' => $payment->order->id
                 ]);
             }
         } catch (\Exception $e) {
             Log::error('Payment callback error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
+                'request_data' => $request->all(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
             ]);
-            return response()->json(['error' => 'Failed to process payment callback'], 500);
+            return response()->json(['error' => 'Failed to process payment callback: ' . $e->getMessage()], 500);
         }
     }
     private function getBillingData($user)

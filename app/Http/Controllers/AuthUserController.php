@@ -101,7 +101,7 @@ class AuthUserController extends Controller
             'message' => 'Email verified successfully. You can now log in.',
             'user' => [
                 'id' => $user->id,
-                'name' => $user->name,
+                'name' => $user->first_name ." ". $user->last_name,
                 'email' => $user->email,
                 'email_verified_at' => $user->email_verified_at
             ]

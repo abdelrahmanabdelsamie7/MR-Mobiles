@@ -20,7 +20,7 @@ class MobileController extends Controller
     public function show(string $id)
     {
         $mobile = Mobile::with(['colors' ,'images'])->findOrFail($id);
-        return $this->sendSuccess('All Mobiles Retrieved Successfully!', $mobile);
+        return $this->sendSuccess('Mobile Data Retrieved Successfully!', $mobile);
     }
     public function store(MobileRequest $request)
     {

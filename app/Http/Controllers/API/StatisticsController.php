@@ -18,7 +18,7 @@ class StatisticsController extends Controller
                 'brands_count' => Brand::count(),
                 'contact_data' => Contact::count(),
                 'users_count' => User::count(),
-                'orders' => Order::count(),
+                'orders' => Order::where('status', 'completed')->count(),
             ]
         ]);
     }
