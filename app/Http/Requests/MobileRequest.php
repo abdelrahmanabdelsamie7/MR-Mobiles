@@ -9,7 +9,8 @@ class MobileRequest extends FormRequest
     }
     public function rules(): array
     {
-        $mobileId = $this->route('id');
+        $mobileId = $this->route('id') ?? $this->route('mobile');
+;
         return [
             'title' => 'required|string|max:255|unique:mobiles,title,' . $mobileId,
             'brand_id' => 'required|exists:brands,id',

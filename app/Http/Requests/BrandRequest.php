@@ -9,7 +9,7 @@ class BrandRequest extends FormRequest
     }
     public function rules(): array
     {
-        $brandId = $this->route('id');
+        $brandId = $this->route('id') ?? $this->route('brand');
         return [
             'name' => 'required|string|max:255|unique:brands,name,' . $brandId,
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:4048',

@@ -9,7 +9,7 @@ class AccessoriesRequest extends FormRequest
     }
     public function rules(): array
     {
-        $accessoryId = $this->route('id');
+        $accessoryId = $this->route('id') ?? $this->route('accessory');;
          return [
             'title'          => 'required|string|max:255|unique:accessories,title,' . $accessoryId ,
             'brand_id'       => 'required|exists:brands,id',
