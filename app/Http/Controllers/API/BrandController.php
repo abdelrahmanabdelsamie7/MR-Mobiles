@@ -11,7 +11,7 @@ class BrandController extends Controller
     use ResponseJsonTrait;
     public function __construct()
     {
-        $this->middleware('auth:admins')->only(['store','update','destroy']);
+        $this->middleware('auth:admins')->only(['store', 'update', 'destroy']);
     }
     public function index()
     {
@@ -25,7 +25,7 @@ class BrandController extends Controller
             $originalName = $request->file('image')->getClientOriginalName();
             $imageName = time() . '_' . $originalName;
             $request->file('image')->move(public_path('uploads/brands'), $imageName);
-            $data['image']= asset('uploads/brands/' . $imageName);
+            $data['image'] = asset('uploads/brands/' . $imageName);
         } else {
             $data['image'] = null;
         }
@@ -34,25 +34,20 @@ class BrandController extends Controller
     }
     public function show(string $id)
     {
-        $brand = Brand::with(['mobiles' ,'accessories'])->findOrFail($id);
+        $brand = Brand::with(['mobiles', 'accessories'])->findOrFail($id);
         return $this->sendSuccess('Brand Data Retrieved Successfully!', $brand);
     }
     public function update(BrandRequest $request, string $id)
     {
         $brand = Brand::findOrFail($id);
         $data = $request->validated();
-        $data = [
-            'name' => $request->name,
-            'slug' => $request->slug,
-        ];
         if ($request->hasFile('image')) {
-            $oldImagePath = public_path('uploads/brands/' . basename($brand->image));
-            if (file_exists($oldImagePath)) {
-                unlink($oldImagePath);
+            if ($brand->image && file_exists(public_path('uploads/brands/' . basename($brand->image)))) {
+                unlink(public_path('uploads/brands/' . basename($brand->image)));
             }
-            $originalName = $request->image->getClientOriginalName();
+            $originalName = $request->file('image')->getClientOriginalName();
             $imageName = time() . '_' . $originalName;
-            $request->image->move(public_path('uploads/brands'), $imageName);
+            $request->file('image')->move(public_path('uploads/brands'), $imageName);
             $data['image'] = asset('uploads/brands/' . $imageName);
         }
         $brand->update($data);
