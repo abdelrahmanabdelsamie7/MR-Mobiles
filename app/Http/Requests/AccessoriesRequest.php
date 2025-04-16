@@ -23,5 +23,4 @@ class AccessoriesRequest extends FormRequest
             'status'         => 'required|in:available,out_of_stock,coming_soon',
         ];
     }
-
 }

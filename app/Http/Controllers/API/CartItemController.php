@@ -16,30 +16,30 @@ class CartItemController extends Controller
         $user = auth('api')->user();
         $cart = $user->cart;
         $productPrice = null;
+
         if ($request->product_type === 'mobile') {
             if (!$request->product_color_id) {
                 return $this->sendError('Product color is required for mobile products.', 400);
             }
             $mobile = Mobile::find($request->product_id);
             $productPrice = $mobile ? $mobile->final_price : null;
-            $totalQuantityInCart = CartItem::where([
-                'cart_id' => $cart->id,
-                'product_id' => $request->product_id,
-                'product_type' => 'mobile'
-            ])->sum('quantity');
-            if ($mobile && ($totalQuantityInCart + $request->quantity) > $mobile->stock_quantity) {
-                return $this->sendError('Not enough stock available. Only ' . $mobile->stock_quantity . ' items left. You already have ' . $totalQuantityInCart . ' in your cart.', 400);
+
+            if (!$mobile || $request->quantity > $mobile->stock_quantity) {
+                return $this->sendError('Not enough stock available. Only ' . ($mobile->stock_quantity ?? 0) . ' items left.', 400);
             }
         } elseif ($request->product_type === 'accessory') {
             $accessory = Accessory::find($request->product_id);
             $productPrice = $accessory ? $accessory->final_price : null;
-            if ($accessory && $accessory->stock_quantity < $request->quantity) {
-                return $this->sendError('Not enough stock available. Only ' . $accessory->stock_quantity . ' items left.', 400);
+
+            if (!$accessory || $request->quantity > $accessory->stock_quantity) {
+                return $this->sendError('Not enough stock available. Only ' . ($accessory->stock_quantity ?? 0) . ' items left.', 400);
             }
         }
+
         if (!$productPrice) {
             return $this->sendError('Product price not found', 404);
         }
+
         $cartItem = CartItem::where([
             'cart_id' => $cart->id,
             'product_id' => $request->product_id,
@@ -47,8 +47,14 @@ class CartItemController extends Controller
         ])->when($request->product_type === 'mobile', function ($query) use ($request) {
             return $query->where('product_color_id', $request->product_color_id);
         })->first();
+
         if ($cartItem) {
-            $cartItem->increment('quantity', $request->quantity);
+            // Check if the new quantity exceeds stock
+            $newQuantity = $request->quantity;
+            if ($newQuantity > ($cartItem->product->stock_quantity ?? 0)) {
+                return $this->sendError('Not enough stock available. Only ' . ($cartItem->product->stock_quantity ?? 0) . ' items left.', 400);
+            }
+            $cartItem->update(['quantity' => $newQuantity]);
         } else {
             $cartItem = CartItem::create([
                 'cart_id' => $cart->id,
@@ -59,6 +65,7 @@ class CartItemController extends Controller
                 'product_color_id' => $request->product_color_id,
             ]);
         }
+
         $cart->updateTotalPrice();
         return $this->sendSuccess('Product added/updated in cart', $cartItem, 201);
     }
