@@ -10,7 +10,7 @@ class Accessory extends Model
     use HasFactory;
     use UsesUuid;
     protected $table = 'accessories';
-    protected $fillable = ['title', 'brand_id', 'description', 'battery', 'color', 'image', 'price', 'discount', 'stock_quantity', 'status', 'product_type', 'final_price'];
+    protected $fillable = ['title', 'brand_id', 'description', 'battery',  'speed' ,'color', 'image', 'price', 'discount', 'stock_quantity', 'status', 'product_type', 'final_price'];
     public function getFinalPriceAttribute()
     {
         if ($this->discount) {

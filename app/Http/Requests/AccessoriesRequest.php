@@ -15,6 +15,7 @@ class AccessoriesRequest extends FormRequest
             'brand_id'       => 'required|exists:brands,id',
             'description'    => 'nullable|string',
             'battery'        => 'nullable|integer|min:100',
+            'speed'        => 'nullable',
             'color'          => 'nullable|string|max:50',
             'image'          => 'nullable|image|mimes:jpeg,png,jpg,gif|max:4048',
             'price'          => 'required|numeric|min:0',
