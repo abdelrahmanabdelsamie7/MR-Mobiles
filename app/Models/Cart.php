@@ -19,13 +19,13 @@ class Cart extends Model
     }
     public function updateTotalPrice()
     {
-        $this->total_price = $this->cartItems->sum(fn($item) => $item->price * $item->quantity);
-        $this->total_quantity = $this->cartItems->sum('quantity');
+        $this->total_price = $this->items->sum(fn($item) => $item->price * $item->quantity);
+        $this->total_quantity = $this->items->sum('quantity');
         $this->save();
     }
     public function getTotalQuantityAttribute()
     {
-        return $this->cartItems->sum('quantity');
+        return $this->items->sum('quantity');
     }
     // public function payment()
     // {

@@ -21,9 +21,9 @@ class CartController extends Controller
     public function index()
     {
         $cart = Cart::where('user_id', $this->user->id)
-            ->with(['cartItems.product', 'cartItems.color'])
+            ->with(['items.product', 'items.color'])
             ->first();
-        if (!$cart || optional($cart->cartItems)->isEmpty()) {
+        if (!$cart || optional($cart->items)->isEmpty()) {
             return $this->sendSuccess("Cart is empty!");
         }
         return $this->sendSuccess('Cart Retrieved Successfully!', $cart);
@@ -31,7 +31,7 @@ class CartController extends Controller
     public function deleteItems()
     {
         $cart = Cart::where('user_id', $this->user->id)->firstOrFail();
-        $cart->cartItems()->delete();
+        $cart->items()->delete();
         $cart->updateTotalPrice();
         return $this->sendSuccess('Cart items deleted successfully!');
     }

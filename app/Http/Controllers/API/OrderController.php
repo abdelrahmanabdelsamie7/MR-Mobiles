@@ -3,20 +3,24 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\{Order, CartItem, Cart};
-use App\Traits\UploadImageTrait;
+use App\Traits\{UploadImageTrait, ResponseJsonTrait};
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderStatusMail;
 use Illuminate\Support\Str;
-
 class OrderController extends Controller
 {
-    use UploadImageTrait;
-
+    use UploadImageTrait, ResponseJsonTrait;
+    public function __construct()
+    {
+        $this->middleware('auth:admins')->only(['index', 'update']);
+        $this->middleware('auth:api')->only(['store', 'userOrders']);
+    }
     public function index()
     {
-        $orders = Order::where('user_id', auth('api')->user()->id)
-            ->with(['items.color'])
+        $orders = Order::with(['user', 'items.product', 'items.productColor'])
+            ->orderBy('created_at', 'desc')
             ->get();
-
-        return response()->json($orders);
+        return $this->sendSuccess('All Orders Retrieved Successfully!', $orders);
     }
     public function store(Request $request)
     {
@@ -25,28 +29,19 @@ class OrderController extends Controller
             'payment_proof' => 'nullable|image',
             'note' => 'nullable|string',
         ]);
-
         $user = auth('api')->user();
-
         if (!$user) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            return $this->sendError('Unauthorized', 401);
         }
-
         $cart = Cart::where('user_id', $user->id)->first();
-
         if (!$cart) {
-            return response()->json(['message' => 'Cart not found'], 404);
+            return $this->sendError('Cart not found', 404);
         }
-
         $cartItems = $cart->items;
-
         if ($cartItems->isEmpty()) {
-            return response()->json(['message' => 'Cart is empty'], 400);
+            return $this->sendError('Cart is empty', 400);
         }
-
-        $total = $cartItems->sum(function ($item) {
-            return $item->price * $item->quantity;
-        });
+        $total = $cartItems->sum(fn($item) => $item->price * $item->quantity);
         $paymentProof = null;
         if ($request->hasFile('payment_proof')) {
             $paymentProof = $this->uploadImage($request->file('payment_proof'), 'payment_proofs');
@@ -60,11 +55,11 @@ class OrderController extends Controller
             'note' => $request->note,
             'total_price' => $total,
         ]);
+        Mail::to($user->email)->send(new OrderStatusMail($order, 'created'));
         $waPhone = '01129508321';
-        $waMessage = 'عميل جديد عمل طلب، راجعه في لوحة التحكم: ' . $order->id;
-        $waUrl = "https://wa.me/$waPhone?text=" . urlencode($waMessage);
-        return response()->json([
-            'message' => 'تم إنشاء الطلب بنجاح',
+        $waMessage = 'أنا طلبت الأوردر ده وعايزك تراجع البيانات وترد في أقرب وقت ممكن: ' . $order->id;
+        $waUrl = "https://wa.me/{$waPhone}?text=" . urlencode($waMessage);
+        return $this->sendSuccess('Your Order Send Successfully !', [
             'order_id' => $order->id,
             'whatsapp_url' => $waUrl,
         ]);
@@ -90,7 +85,23 @@ class OrderController extends Controller
                 ]);
             }
             CartItem::where('cart_id', $order->cart_id)->delete();
+            Mail::to($order->user->email)->send(new OrderStatusMail($order, 'confirmed'));
+        } elseif ($request->payment_status === 'rejected') {
+            Mail::to($order->user->email)->send(new OrderStatusMail($order, 'rejected'));
         }
-        return response()->json(['message' => 'تم تحديث حالة الطلب بنجاح']);
+        return $this->sendSuccess('تم تحديث حالة الطلب بنجاح');
+    }
+    public function userOrders()
+    {
+        $user = auth('api')->user();
+        if (!$user) {
+            return $this->sendError('Unauthorized', 401);
+        }
+        $orders = Order::with('items.product', 'items.productColor')
+            ->where('user_id', $user->id)
+            ->whereIn('payment_status', ['pending', 'confirmed'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return $this->sendSuccess('User Orders Retrieved Successfully !', $orders);
     }
 }
