@@ -2,7 +2,7 @@
 namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\{Hash, Validator,Mail};
+use Illuminate\Support\Facades\{Hash, Validator, Mail};
 use Illuminate\Support\Str;
 use App\Mail\{VerifyEmail, ResetPassword};
 class AuthUserController extends Controller
@@ -21,7 +21,6 @@ class AuthUserController extends Controller
             return response()->json($validator->errors(), 422);
         }
         $user = User::where('email', $request->email)->first();
-
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['error' => 'Invalid credentials'], 401);
         }
@@ -30,7 +29,7 @@ class AuthUserController extends Controller
         }
         $token = auth('api')->login($user);
         return response()->json([
-            'message' => 'تم تسجيل الدخول بنجاح!',
+            'message' => 'Login successfully !',
             'access_token' => $token,
             'user' => $user
         ]);
@@ -43,13 +42,8 @@ class AuthUserController extends Controller
             'first_name' => 'required|string|max:50',
             'last_name' => 'required|string|max:50',
             'phone_number' => 'required|string|min:8|max:15|regex:/^[0-9]+$/',
-            'country' => 'required|string|max:50',
             'city' => 'required|string|max:50',
-            'street' => 'required|string|max:100',
-            'apartment' => 'nullable|string|max:10',
-            'floor' => 'nullable|string|max:10',
-            'building' => 'nullable|string|max:10',
-            'postal_code' => 'nullable|string|max:20',
+            'area' => 'required|string|max:100',
         ]);
         if ($validator->fails()) {
             return response()->json($validator->errors()->toJson(), 400);
@@ -60,13 +54,8 @@ class AuthUserController extends Controller
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'phone_number' => $request->phone_number,
-            'country' => $request->country,
+            'area' => $request->area,
             'city' => $request->city,
-            'street' => $request->street,
-            'apartment' => $request->apartment,
-            'floor' => $request->floor,
-            'building' => $request->building,
-            'postal_code' => $request->postal_code,
             'password' => Hash::make($request->get('password')),
             'verification_token' => $verificationToken,
             'verification_token_expires_at' => now()->addHours(3),
@@ -98,7 +87,7 @@ class AuthUserController extends Controller
             'message' => 'Email verified successfully. You can now log in.',
             'user' => [
                 'id' => $user->id,
-                'name' => $user->first_name ." ". $user->last_name,
+                'name' => $user->first_name . " " . $user->last_name,
                 'email' => $user->email,
                 'email_verified_at' => $user->email_verified_at
             ]

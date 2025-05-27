@@ -6,16 +6,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('brands', function (Blueprint $table) {
+        Schema::create('mobile_variant_images', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('name')->unique();
-            $table->string('slug')->unique();
+            $table->foreignUuid('mobile_color_variant_id')->constrained('mobile_color_variants')->cascadeOnDelete()->cascadeOnUpdate();
             $table->string('image');
             $table->timestamps();
         });
     }
     public function down(): void
     {
-        Schema::dropIfExists('brands');
+        Schema::dropIfExists('mobile_variant_images');
     }
 };

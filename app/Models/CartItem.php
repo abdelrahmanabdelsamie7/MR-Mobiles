@@ -1,6 +1,6 @@
 <?php
 namespace App\Models;
-use App\Models\{Cart,MobileColor};
+use App\Models\{Cart,MobileColorVariant};
 use App\traits\UsesUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +17,7 @@ class CartItem extends Model
     }
     public function color()
     {
-        return $this->belongsTo(MobileColor::class, 'product_color_id');
+        return $this->belongsTo(MobileColorVariant::class, 'product_color_id');
     }
     public function product()
     {

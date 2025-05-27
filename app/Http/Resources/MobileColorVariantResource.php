@@ -1,0 +1,20 @@
+<?php
+namespace App\Http\Resources;
+use Illuminate\Http\Resources\Json\JsonResource;
+class MobileColorVariantResource extends JsonResource
+{
+    public function toArray($request)
+    {
+        return [
+            'id' => $this->id,
+            'stock_quantity' => $this->stock_quantity,
+            'is_available' => $this->hasStock(),
+            'color' => [
+                'id' => $this->color?->id,
+                'name' => $this->color?->name,
+                'hex_code' => $this->color?->hex_code,
+            ],
+            'images' => MobileVariantImageResource::collection($this->whenLoaded('images')),
+        ];
+    }
+}

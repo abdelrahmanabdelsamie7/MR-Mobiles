@@ -10,8 +10,9 @@ class MobileImageRequest extends FormRequest
     public function rules(): array
     {
         return [
-           'mobile_id' => 'required|exists:mobiles,id',
-           'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:4048'
+            'mobile_color_variant_id' => 'required|exists:mobile_color_variants,id',
+            'images' => 'required|array',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:4048',
         ];
     }
 }

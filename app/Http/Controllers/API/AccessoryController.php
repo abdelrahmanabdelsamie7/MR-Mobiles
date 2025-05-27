@@ -1,14 +1,12 @@
 <?php
 namespace App\Http\Controllers\API;
 use App\Models\Accessory;
-use App\traits\ResponseJsonTrait;
+use App\Traits\{ResponseJsonTrait, UploadImageTrait};
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\File;
 use App\Http\Requests\AccessoriesRequest;
-
 class AccessoryController extends Controller
 {
-    use ResponseJsonTrait;
+    use ResponseJsonTrait, UploadImageTrait;
     public function __construct()
     {
         $this->middleware('auth:admins')->only(['store', 'update', 'destroy']);
@@ -27,9 +25,7 @@ class AccessoryController extends Controller
     {
         $data = $request->validated();
         if ($request->hasFile('image')) {
-            $imageName = uniqid() . '_' . $request->file('image')->getClientOriginalName(); // استخدم uniqid أو UUID هنا
-            $request->file('image')->move(public_path('uploads/accessories'), $imageName);
-            $data['image'] = asset('uploads/accessories/' . $imageName);
+            $data['image'] = $this->uploadImage($request->file('image'), 'accessories');
         }
         $accessory = Accessory::create($data);
         return $this->sendSuccess('Accessory Added Successfully', $accessory, 201);
@@ -39,13 +35,8 @@ class AccessoryController extends Controller
         $accessory = Accessory::findOrFail($id);
         $data = $request->validated();
         if ($request->hasFile('image')) {
-            $oldImagePath = public_path('uploads/accessories/' . basename($accessory->image));
-            if (file_exists($oldImagePath)) {
-                unlink($oldImagePath);
-            }
-            $imageName = uniqid() . '_' . $request->image->getClientOriginalName();
-            $request->image->move(public_path('uploads/accessories'), $imageName);
-            $data['image'] = asset('uploads/accessories/' . $imageName);
+            $this->deleteImage($accessory->image);
+            $data['image'] = $this->uploadImage($request->file('image'), 'accessories');
         }
         $accessory->update($data);
         return $this->sendSuccess('Accessory Data Updated Successfully', $accessory, 200);
@@ -53,12 +44,7 @@ class AccessoryController extends Controller
     public function destroy($id)
     {
         $accessory = Accessory::findOrFail($id);
-        if ($accessory->image && !str_contains($accessory->image, 'default.jpg')) {
-            $imagePath = public_path("uploads/accessories/" . basename($accessory->image));
-            if (File::exists($imagePath)) {
-                File::delete($imagePath);
-            }
-        }
+        $this->deleteImage($accessory->image);
         $accessory->delete();
         return $this->sendSuccess('Accessory Removed Successfully');
     }

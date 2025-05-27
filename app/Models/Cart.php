@@ -1,22 +1,19 @@
 <?php
-
 namespace App\Models;
-use App\Models\{User, CartItem,Payment};
+use App\Models\{User, CartItem};
 use App\traits\UsesUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
 class Cart extends Model
 {
-    use HasFactory;
-    use UsesUuid;
+    use HasFactory, UsesUuid;
     protected $table = 'carts';
-    protected $fillable = ['user_id','total_price', 'total_quantity'];
+    protected $fillable = ['user_id', 'total_price', 'total_quantity'];
     public function user()
     {
         return $this->belongsTo(User::class);
     }
-    public function cartItems()
+    public function items()
     {
         return $this->hasMany(CartItem::class);
     }
@@ -30,8 +27,8 @@ class Cart extends Model
     {
         return $this->cartItems->sum('quantity');
     }
-    public function payment()
-    {
-        return $this->hasOne(Payment::class);
-    }
+    // public function payment()
+    // {
+    //     return $this->hasOne(Payment::class);
+    // }
 }

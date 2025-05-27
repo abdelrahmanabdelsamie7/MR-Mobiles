@@ -14,5 +14,5 @@ class BrandRequest extends FormRequest
             'name' => 'required|string|max:255|unique:brands,name,' . $brandId,
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:4048',
         ];
-}
+    }
 }

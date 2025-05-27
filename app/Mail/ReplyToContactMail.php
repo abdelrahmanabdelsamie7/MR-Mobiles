@@ -16,6 +16,6 @@ class ReplyToContactMail extends Mailable
     public function build()
     {
         return $this->subject('Reply to Your Inquiry')
-                    ->view('emails.reply_to_contact');
+            ->view('emails.reply_to_contact');
     }
 }

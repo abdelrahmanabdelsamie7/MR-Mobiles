@@ -9,7 +9,7 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->foreignUuid('cart_id')->constrained('carts')->cascadeOnDelete()->cascadeOnUpdate();
             $table->uuid('product_color_id')->nullable();
-            $table->foreign('product_color_id')->references('id')->on('mobile_colors')->cascadeOnDelete()->cascadeOnUpdate();
+            $table->foreign('product_color_id')->references('id')->on('mobile_color_variants')->cascadeOnDelete()->cascadeOnUpdate();
             $table->uuid('product_id');
             $table->enum('product_type', ['mobile', 'accessory']);
             $table->integer('quantity')->default(1);

@@ -1,9 +1,7 @@
 <?php
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-
 return new class extends Migration {
     public function up(): void
     {
@@ -12,13 +10,8 @@ return new class extends Migration {
             $table->string('first_name');
             $table->string('last_name');
             $table->string('phone_number');
-            $table->string('country')->default('EG');
             $table->string('city');
-            $table->string('street');
-            $table->string('apartment');
-            $table->string('floor');
-            $table->string('building');
-            $table->string('postal_code');
+            $table->string('area');
             $table->string('email')->unique();
             $table->string('password');
             $table->timestamp('email_verified_at')->nullable();

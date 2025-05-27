@@ -8,6 +8,7 @@ return new class extends Migration {
         Schema::create('mobiles', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('title')->unique();
+            $table->string('slug')->unique();
             $table->foreignUuid('brand_id')->constrained('brands')->cascadeOnDelete()->cascadeOnUpdate();
             $table->string('model_number');
             $table->text('description')->nullable();
@@ -22,7 +23,6 @@ return new class extends Migration {
             $table->string('camera')->nullable();
             $table->string('network_support');
             $table->year('release_year');
-            $table->integer('stock_quantity')->default(0);
             $table->string('image_cover');
             $table->enum('status', ['available', 'out_of_stock', 'coming_soon'])->default('available');
             $table->string('product_type')->default('mobile');

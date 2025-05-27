@@ -1,16 +1,19 @@
 <?php
 namespace App\Models;
 use App\Models\{Brand, Wishlist, CartItem, OrderItem};
-use App\traits\UsesUuid;
+use App\traits\{UsesUuid, HasSlug};
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Accessory extends Model
 {
-    use HasFactory;
-    use UsesUuid;
+    use HasFactory, UsesUuid, HasSlug;
     protected $table = 'accessories';
-    protected $fillable = ['title', 'brand_id', 'description', 'battery',  'speed' ,'color', 'image', 'price', 'discount', 'stock_quantity', 'status', 'product_type', 'final_price'];
+    protected $fillable = ['title', 'slug', 'brand_id', 'description', 'battery', 'speed', 'color', 'image', 'price', 'discount', 'stock_quantity', 'status', 'product_type', 'final_price'];
+    public function getSlugSource()
+    {
+        return 'title';
+    }
     public function getFinalPriceAttribute()
     {
         if ($this->discount) {
@@ -20,7 +23,7 @@ class Accessory extends Model
     }
     public function brand()
     {
-        return $this->belongsTo(Brand::class);
+        return $this->belongsTo(Brand::class, 'brand_id');
     }
     public function wishlists()
     {

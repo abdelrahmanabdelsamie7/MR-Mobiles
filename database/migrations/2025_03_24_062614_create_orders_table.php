@@ -7,9 +7,12 @@ return new class extends Migration {
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('user_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignUuid('user_id')->nullable()->constrained('users')->onDelete('cascade');
+            $table->enum('payment_method', ['instapay', 'vodafone_cash', 'cod'])->default('cod');
+            $table->enum('payment_status', ['pending', 'confirmed', 'rejected'])->default('pending');
+            $table->string('payment_proof')->nullable();
             $table->decimal('total_price', 10, 2);
-            $table->string('status')->default('pending');
+            $table->text('note')->nullable();
             $table->timestamps();
         });
     }

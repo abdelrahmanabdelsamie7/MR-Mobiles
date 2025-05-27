@@ -18,7 +18,7 @@ class CartController extends Controller
         $cart->updateTotalPrice();
         return $this->sendSuccess('Cart Created Successfully!', $cart, 201);
     }
-     public function index()
+    public function index()
     {
         $cart = Cart::where('user_id', $this->user->id)
             ->with(['cartItems.product', 'cartItems.color'])

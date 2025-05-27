@@ -5,15 +5,15 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('mobile_images', function (Blueprint $table) {
+        Schema::create('colors', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('mobile_id')->constrained('mobiles')->cascadeOnDelete()->cascadeOnUpdate();
-            $table->string('image');
+            $table->string('name')->unique();
+            $table->string('hex_code');
             $table->timestamps();
         });
     }
     public function down(): void
     {
-        Schema::dropIfExists('mobile_images');
+        Schema::dropIfExists('colors');
     }
 };

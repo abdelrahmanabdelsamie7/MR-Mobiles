@@ -1,19 +1,24 @@
 <?php
-
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\File;
-use App\Traits\UsesUuid;
-use App\Models\{Brand, OrderItem, MobileColor, MobileImage, Wishlist, CartItem};
-
+use App\Traits\{UsesUuid, HasSlug};
+use App\Models\{
+    Brand,
+    OrderItem,
+    MobileColorVariant,
+    MobileVariantImage,
+    Wishlist,
+    CartItem
+};
 class Mobile extends Model
 {
-    use HasFactory, UsesUuid;
+    use HasFactory, UsesUuid, HasSlug;
     protected $table = 'mobiles';
     protected $fillable = [
         'title',
+        'slug',
         'brand_id',
         'description',
         'model_number',
@@ -28,7 +33,6 @@ class Mobile extends Model
         'camera',
         'network_support',
         'release_year',
-        'stock_quantity',
         'status',
         'product_type',
         'final_price'
@@ -36,21 +40,23 @@ class Mobile extends Model
     protected static function boot()
     {
         parent::boot();
-
         static::deleting(function ($mobile) {
-            foreach ($mobile->colors as $color) {
-                if ($color->image && basename($color->image) !== 'default.jpg') {
-                    File::delete(public_path("uploads/mobiles/" . basename($color->image)));
-                }
-            }
-            foreach ($mobile->images as $image) {
-                if ($image->image) {
+            $mobile->loadMissing(['variantImages']);
+            foreach ($mobile->variantImages as $image) {
+                if ($image->image && basename($image->image) !== 'default.jpg') {
                     File::delete(public_path("uploads/mobiles/" . basename($image->image)));
                 }
             }
-            $mobile->colors()->delete();
-            $mobile->images()->delete();
+            if ($mobile->image_cover && !str_contains($mobile->image_cover, 'default.jpg')) {
+                File::delete(public_path("uploads/mobiles/" . basename($mobile->image_cover)));
+            }
+            $mobile->variantImages()->delete();
+            $mobile->colorVariants()->delete();
         });
+    }
+    public function getSlugSource()
+    {
+        return 'title';
     }
     public function getFinalPriceAttribute()
     {
@@ -63,13 +69,20 @@ class Mobile extends Model
     {
         return $this->belongsTo(Brand::class);
     }
-    public function colors()
+    public function colorVariants()
     {
-        return $this->hasMany(MobileColor::class);
+        return $this->hasMany(MobileColorVariant::class);
     }
-    public function images()
+    public function variantImages()
     {
-        return $this->hasMany(MobileImage::class);
+        return $this->hasManyThrough(
+            MobileVariantImage::class,
+            MobileColorVariant::class,
+            'mobile_id',
+            'mobile_color_variant_id',
+            'id',
+            'id'
+        );
     }
     public function wishlists()
     {

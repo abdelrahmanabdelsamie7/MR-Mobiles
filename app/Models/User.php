@@ -18,13 +18,8 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'first_name',
         'last_name',
         'phone_number',
-        'country',
         'city',
-        'street',
-        'apartment',
-        'floor',
-        'building',
-        'postal_code',
+        'area',
         'verification_token',
         'verification_token_expires_at',
     ];
@@ -36,7 +31,6 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
-    // User Relationships
     protected static function boot()
     {
         parent::boot();
@@ -60,41 +54,32 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     {
         return [];
     }
-    // Relationships
     public function orders()
     {
         return $this->hasMany(Order::class);
     }
-    public function payments()
-    {
-        return $this->hasMany(Payment::class);
-    }
-    // Accessors
-    public function getFullNameAttribute()
-    {
-        return $this->first_name . ' ' . $this->last_name;
-    }
-    public function getFullAddressAttribute()
-    {
-        $address = [];
-        if ($this->street)
-            $address[] = $this->street;
-        if ($this->apartment)
-            $address[] = 'Apartment: ' . $this->apartment;
-        if ($this->floor)
-            $address[] = 'Floor: ' . $this->floor;
-        if ($this->building)
-            $address[] = 'Building: ' . $this->building;
-        if ($this->city)
-            $address[] = $this->city;
-        if ($this->postal_code)
-            $address[] = $this->postal_code;
-        if ($this->country)
-            $address[] = $this->country;
-        return implode(', ', $address);
-    }
-    public function sendEmailVerificationNotification()
-    {
-        $this->notify(new \App\Notifications\CustomVerifyEmail);
-    }
+    /* public function payments()
+     {
+         return $this->hasMany(Payment::class);
+     } */
+
+    /* public function getFullAddressAttribute()
+     {
+         $address = [];
+         if ($this->street)
+             $address[] = $this->street;
+         if ($this->apartment)
+             $address[] = 'Apartment: ' . $this->apartment;
+         if ($this->floor)
+             $address[] = 'Floor: ' . $this->floor;
+         if ($this->building)
+             $address[] = 'Building: ' . $this->building;
+         if ($this->city)
+             $address[] = $this->city;
+         if ($this->postal_code)
+             $address[] = $this->postal_code;
+         if ($this->country)
+             $address[] = $this->country;
+         return implode(', ', $address);
+     } */
 }

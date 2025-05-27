@@ -13,15 +13,12 @@ class AuthAdminController extends Controller
             'email' => 'required|email',
             'password' => 'required|min:8',
         ]);
-
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
-
         if (!$token = auth('admins')->attempt($validator->validated())) {
             return response()->json(['error' => 'Invalid credentials'], 401);
         }
-
         return $this->respondWithToken($token);
     }
     public function register(Request $request)
@@ -42,8 +39,8 @@ class AuthAdminController extends Controller
         $token = JWTAuth::fromUser($admin);
         return response()->json([
             'message' => 'Admin successfully registered',
-            'admin' => $admin,
             'token' => $token,
+            'admin' => $admin,
         ], 200);
     }
     public function getAccount()
