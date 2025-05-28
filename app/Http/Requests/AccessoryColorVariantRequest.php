@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
-class MobileColorVariantRequest extends FormRequest
+class AccessoryColorVariantRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -10,7 +10,7 @@ class MobileColorVariantRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'mobile_id' => 'required|exists:mobiles,id',
+            'accessory_id' => 'required|exists:accessories,id',
             'color_id' => 'required|exists:colors,id',
             'stock_quantity' => 'required|integer|min:0',
         ];

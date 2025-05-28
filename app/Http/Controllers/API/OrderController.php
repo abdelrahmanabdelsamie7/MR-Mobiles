@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\{Order, CartItem, Cart};
+use App\Models\{Order, Cart};
 use App\Traits\{UploadImageTrait, ResponseJsonTrait};
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderStatusMail;
@@ -73,18 +73,6 @@ class OrderController extends Controller
             'payment_status' => $request->payment_status,
         ]);
         if ($request->payment_status === 'confirmed') {
-            $cartItems = CartItem::where('cart_id', $order->cart_id)->get();
-            foreach ($cartItems as $item) {
-                $order->items()->create([
-                    'id' => Str::uuid(),
-                    'product_id' => $item->product_id,
-                    'product_type' => $item->product_type,
-                    'quantity' => $item->quantity,
-                    'price' => $item->price,
-                    'product_color_id' => $item->product_color_id,
-                ]);
-            }
-            CartItem::where('cart_id', $order->cart_id)->delete();
             Mail::to($order->user->email)->send(new OrderStatusMail($order, 'confirmed'));
         } elseif ($request->payment_status === 'rejected') {
             Mail::to($order->user->email)->send(new OrderStatusMail($order, 'rejected'));

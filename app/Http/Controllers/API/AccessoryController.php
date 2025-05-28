@@ -1,5 +1,6 @@
 <?php
 namespace App\Http\Controllers\API;
+use App\Http\Resources\AccessoryResource;
 use App\Models\Accessory;
 use App\Traits\{ResponseJsonTrait, UploadImageTrait};
 use App\Http\Controllers\Controller;
@@ -13,13 +14,23 @@ class AccessoryController extends Controller
     }
     public function index()
     {
-        $accessories = Accessory::all();
-        return $this->sendSuccess('Accessories Retrieved Successfully!', $accessories);
+        $accessories = Accessory::with([
+            'brand',
+            'colorVariants.color',
+            'colorVariants.images',
+            'variantImages'
+        ])->get();
+        return $this->sendSuccess('Accessories Retrieved Successfully!', AccessoryResource::collection($accessories));
     }
     public function show(string $id)
     {
-        $accessory = Accessory::with(['brand:id,name,image'])->findOrFail($id);
-        return $this->sendSuccess('Accessory Data Retrieved Successfully!', $accessory);
+        $accessory = Accessory::with([
+            'brand',
+            'colorVariants.color',
+            'colorVariants.images',
+            'variantImages'
+        ])->findOrFail($id);
+        return $this->sendSuccess('Accessory Data Retrieved Successfully!', new AccessoryResource($accessory));
     }
     public function store(AccessoriesRequest $request)
     {

@@ -1,9 +1,11 @@
 <?php
 namespace App\Http\Controllers\API;
 use App\Models\Brand;
-use App\Traits\{ResponseJsonTrait, UploadImageTrait};
 use App\Http\Requests\BrandRequest;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\{MobileResource, AccessoryResource};
+use App\Traits\{ResponseJsonTrait, UploadImageTrait};
+
 class BrandController extends Controller
 {
     use ResponseJsonTrait, UploadImageTrait;
@@ -30,8 +32,14 @@ class BrandController extends Controller
     }
     public function show(string $id)
     {
-        $brand = Brand::with(['mobiles', 'accessories'])->findOrFail($id);
-        return $this->sendSuccess('Brand Data Retrieved Successfully!', $brand);
+        $brand = Brand::findOrFail($id);
+        return $this->sendSuccess('Brand Data Retrieved Successfully!', [
+            'id' => $brand->id,
+            'name' => $brand->name,
+            'image' => $brand->image,
+            'mobiles' => MobileResource::collection($brand->mobiles),
+            'accessories' => AccessoryResource::collection($brand->accessories),
+        ]);
     }
     public function update(BrandRequest $request, string $id)
     {

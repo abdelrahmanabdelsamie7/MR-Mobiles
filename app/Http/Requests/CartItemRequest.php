@@ -29,10 +29,16 @@ class CartItemRequest extends FormRequest
             'product_color_id' => [
                 'nullable',
                 'uuid',
-                'exists:mobile_colors,id',
                 function ($attribute, $value, $fail) {
-                    if ($this->product_type === 'mobile' && !$value) {
-                        $fail('The product_color_id is required for mobiles.');
+                    if ($this->product_type === 'mobile') {
+                        if (!$value || !DB::table('mobile_color_variants')->where('id', $value)->exists()) {
+                            $fail('The product_color_id is invalid or missing for mobile.');
+                        }
+                    }
+                    if ($this->product_type === 'accessory') {
+                        if (!$value || !DB::table('accessory_color_variants')->where('id', $value)->exists()) {
+                            $fail('The product_color_id is invalid or missing for accessory.');
+                        }
                     }
                 },
             ],

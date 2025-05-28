@@ -15,12 +15,9 @@ class AccessoriesRequest extends FormRequest
             'brand_id'       => 'required|exists:brands,id',
             'description'    => 'nullable|string',
             'battery'        => 'nullable|integer|min:100',
-            'speed'        => 'nullable',
-            'color'          => 'nullable|string|max:50',
             'image'          => 'nullable|image|mimes:jpeg,png,jpg,gif|max:4048',
             'price'          => 'required|numeric|min:0',
             'discount'       => 'nullable|integer|min:0|max:100',
-            'stock_quantity' => 'nullable|integer|min:0',
             'status'         => 'required|in:available,out_of_stock,coming_soon',
         ];
     }

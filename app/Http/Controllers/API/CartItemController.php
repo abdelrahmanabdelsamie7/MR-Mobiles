@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
-use App\Models\{Cart, CartItem, MobileColorVariant, Accessory};
+use App\Models\{Cart, CartItem, MobileColorVariant, Accessory, AccessoryColorVariant};
 use App\traits\ResponseJsonTrait;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -41,12 +41,19 @@ class CartItemController extends Controller
             }
             $price = $variant->mobile->final_price;
         } elseif ($productType === 'accessory') {
-            $accessory = Accessory::findOrFail($productId);
-            if ($accessory->stock_quantity < $quantity) {
-                return $this->sendError('Insufficient stock for accessory.', 400);
+            if (!$colorId) {
+                return $this->sendError('Color variant is required for accessory products.', 422);
             }
-            $price = $accessory->final_price;
-            $colorId = null;
+            $variant = AccessoryColorVariant::findOrFail($colorId);
+
+            if ($variant->accessory_id !== $productId) {
+                return $this->sendError('Product ID and color variant mismatch for accessory.', 422);
+            }
+
+            if ($variant->stock_quantity < $quantity) {
+                return $this->sendError('Insufficient stock for the selected accessory color variant.', 400);
+            }
+            $price = $variant->accessory->final_price;
         }
         $existingItem = $cart->items()
             ->where('product_id', $productId)
@@ -120,8 +127,8 @@ class CartItemController extends Controller
             return $variant && $variant->stock_quantity >= $quantity;
         }
         if ($type === 'accessory') {
-            $accessory = Accessory::find($productId);
-            return $accessory && $accessory->stock_quantity >= $quantity;
+            $variant = AccessoryColorVariant::find($colorId);
+            return $variant && $variant->accessory_id === $productId && $variant->stock_quantity >= $quantity;
         }
         return false;
     }

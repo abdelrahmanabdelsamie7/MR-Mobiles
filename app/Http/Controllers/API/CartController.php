@@ -21,7 +21,7 @@ class CartController extends Controller
     public function index()
     {
         $cart = Cart::where('user_id', $this->user->id)
-            ->with(['items.product', 'items.color'])
+        ->with(['items.product', 'items.mobileColor', 'items.accessoryColor'])
             ->first();
         if (!$cart || optional($cart->items)->isEmpty()) {
             return $this->sendSuccess("Cart is empty!");

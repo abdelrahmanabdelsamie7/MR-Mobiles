@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->enum('product_type', ['mobile', 'accessory']);
             $table->integer('quantity');
             $table->decimal('price', 10, 2);
-            $table->uuid('product_color_id')->nullable()->constrained('mobile_color_variants')->onDelete('set null');
+            $table->uuid('product_color_id')->nullable();
             $table->timestamps();
         });
     }

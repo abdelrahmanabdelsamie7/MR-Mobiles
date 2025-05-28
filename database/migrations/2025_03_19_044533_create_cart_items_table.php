@@ -8,9 +8,8 @@ return new class extends Migration {
         Schema::create('cart_items', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('cart_id')->constrained('carts')->cascadeOnDelete()->cascadeOnUpdate();
-            $table->uuid('product_color_id')->nullable();
-            $table->foreign('product_color_id')->references('id')->on('mobile_color_variants')->cascadeOnDelete()->cascadeOnUpdate();
             $table->uuid('product_id');
+            $table->uuid('product_color_id')->nullable();
             $table->enum('product_type', ['mobile', 'accessory']);
             $table->integer('quantity')->default(1);
             $table->decimal('price', 10, 2);

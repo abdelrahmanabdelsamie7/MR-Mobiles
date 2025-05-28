@@ -4,13 +4,15 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\{
     BrandController, MobileController, MobileColorVariantController, MobileVariantImageController,
     AccessoryController, WishlistController, CartController, CartItemController, ContactController, OrderController,
-    StatisticsController, ColorController
+    StatisticsController, ColorController ,AccessoryColorVariantController , AccessoryVariantImageController
 };
 Route::apiResources([
     'brands' => BrandController::class,
     'mobiles' => MobileController::class,
     'mobile-colors' => MobileColorVariantController::class,
+    'accessory-colors' => AccessoryColorVariantController::class,
     'mobile-images' => MobileVariantImageController::class,
+    'accessory-images' => AccessoryVariantImageController::class,
     'accessories' => AccessoryController::class,
     'wishlist' => WishlistController::class,
     'cart' => CartController::class,
