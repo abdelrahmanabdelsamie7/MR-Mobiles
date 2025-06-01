@@ -83,15 +83,7 @@ class AuthUserController extends Controller
         if (!$user->save()) {
             return response()->json(['error' => 'Failed to verify email. Please try again.'], 500);
         }
-        return response()->json([
-            'message' => 'Email verified successfully. You can now log in.',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->first_name . " " . $user->last_name,
-                'email' => $user->email,
-                'email_verified_at' => $user->email_verified_at
-            ]
-        ], 200);
+        return redirect()->away('http://localhost:3007/signeup');
     }
     public function resendVerification(Request $request)
     {
