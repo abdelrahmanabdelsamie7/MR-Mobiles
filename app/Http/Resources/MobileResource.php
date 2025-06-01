@@ -19,6 +19,7 @@ class MobileResource extends JsonResource
             'operating_system' => $this->operating_system,
             'camera'       => $this->camera,
             'network_support' => $this->network_support,
+            'total_quantity' =>$this->total_quantity ,
             'brand'        => new BrandResource($this->whenLoaded('brand')),
             'price'        => $this->price,
             'discount'     => $this->discount,

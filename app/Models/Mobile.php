@@ -65,6 +65,10 @@ class Mobile extends Model
         }
         return $this->price;
     }
+    public function getTotalQuantityAttribute()
+    {
+        return $this->colorVariants()->sum('stock_quantity');
+    }
     public function brand()
     {
         return $this->belongsTo(Brand::class);

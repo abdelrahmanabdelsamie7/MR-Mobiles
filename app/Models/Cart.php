@@ -9,14 +9,6 @@ class Cart extends Model
     use HasFactory, UsesUuid;
     protected $table = 'carts';
     protected $fillable = ['user_id', 'total_price', 'total_quantity'];
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-    public function items()
-    {
-        return $this->hasMany(CartItem::class);
-    }
     public function updateTotalPrice()
     {
         $this->total_price = $this->items->sum(fn($item) => $item->price * $item->quantity);
@@ -26,6 +18,14 @@ class Cart extends Model
     public function getTotalQuantityAttribute()
     {
         return $this->items->sum('quantity');
+    }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+    public function items()
+    {
+        return $this->hasMany(CartItem::class);
     }
     // public function payment()
     // {

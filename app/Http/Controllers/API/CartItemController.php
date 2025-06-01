@@ -3,26 +3,28 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\{Cart, CartItem, MobileColorVariant, Accessory, AccessoryColorVariant};
 use App\traits\ResponseJsonTrait;
+use App\Http\Requests\CartItemRequest;
+use App\Http\Resources\CartResource;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 class CartItemController extends Controller
 {
     use ResponseJsonTrait;
     public function index()
     {
         $cart = $this->getUserCart();
-        $items = $cart ? $cart->items()->with('product', 'color')->get() : collect();
-        return $this->sendSuccess('Cart items retrieved successfully.', $items);
+        if (!$cart) {
+            return $this->sendError('Cart not found', 404);
+        }
+        return $this->sendSuccess('Cart items retrieved successfully.', new CartResource($cart));
     }
-    public function store(Request $request)
+    public function store(CartItemRequest $request)
     {
-        $validated = $request->validate([
-            'product_id' => 'required|uuid|exists:accessories,id',
-            'product_type' => ['required', Rule::in(['mobile', 'accessory'])],
-            'quantity' => 'required|integer|min:1',
-            'product_color_id' => 'nullable|uuid'
-        ]);
+        $validated = $request->validated();
         $cart = $this->getUserCart(true);
+        if (!$cart) {
+            return $this->sendError('Unauthorized', 401);
+        }
+
         $productId = $validated['product_id'];
         $productType = $validated['product_type'];
         $quantity = $validated['quantity'];

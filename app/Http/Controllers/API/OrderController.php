@@ -4,6 +4,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\{Order, Cart};
 use App\Traits\{UploadImageTrait, ResponseJsonTrait};
+use App\Http\Resources\OrderResource;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderStatusMail;
 use Illuminate\Support\Str;
@@ -17,10 +18,15 @@ class OrderController extends Controller
     }
     public function index()
     {
-        $orders = Order::with(['user', 'items.product', 'items.productColor'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-        return $this->sendSuccess('All Orders Retrieved Successfully!', $orders);
+        $orders = Order::with([
+            'user',
+            'user.cart',
+            'items.mobileColor.mobile',
+            'items.accessoryColor.accessory'
+        ])
+        ->orderBy('created_at', 'desc')
+        ->get();
+        return $this->sendSuccess('All Orders Retrieved Successfully!', OrderResource::collection($orders));
     }
     public function store(Request $request)
     {
@@ -82,14 +88,15 @@ class OrderController extends Controller
     public function userOrders()
     {
         $user = auth('api')->user();
-        if (!$user) {
-            return $this->sendError('Unauthorized', 401);
-        }
-        $orders = Order::with('items.product', 'items.productColor')
-            ->where('user_id', $user->id)
-            ->whereIn('payment_status', ['pending', 'confirmed'])
+        $orders = $user->orders()
+            ->where('payment_status', 'confirmed')
+            ->with([
+                'items.mobileColor.mobile',
+                'items.accessoryColor.accessory'
+            ])
             ->orderBy('created_at', 'desc')
             ->get();
-        return $this->sendSuccess('User Orders Retrieved Successfully !', $orders);
+
+        return $this->sendSuccess('User Orders Retrieved Successfully!', OrderResource::collection($orders));
     }
 }

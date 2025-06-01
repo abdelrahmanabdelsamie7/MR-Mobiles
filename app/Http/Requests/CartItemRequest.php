@@ -12,7 +12,6 @@ class CartItemRequest extends FormRequest
     public function rules()
     {
         return [
-            'cart_id' => ['required', 'uuid', 'exists:carts,id'],
             'product_id' => [
                 'required',
                 'uuid',
@@ -48,9 +47,6 @@ class CartItemRequest extends FormRequest
     public function messages()
     {
         return [
-            'cart_id.required' => 'Cart ID is required.',
-            'cart_id.uuid' => 'Cart ID must be a valid UUID.',
-            'cart_id.exists' => 'Cart not found.',
             'product_id.required' => 'Product ID is required.',
             'product_id.uuid' => 'Product ID must be a valid UUID.',
             'product_type.required' => 'Product type is required.',

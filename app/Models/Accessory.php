@@ -21,6 +21,10 @@ class Accessory extends Model
         }
         return $this->price;
     }
+    public function getTotalQuantityAttribute()
+    {
+        return $this->colorVariants()->sum('stock_quantity');
+    }
     public function colorVariants()
     {
         return $this->hasMany(AccessoryColorVariant::class);
