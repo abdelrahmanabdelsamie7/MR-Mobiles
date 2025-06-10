@@ -9,7 +9,7 @@ class Accessory extends Model
 {
     use HasFactory, UsesUuid, HasSlug;
     protected $table = 'accessories';
-    protected $fillable = ['title', 'slug', 'brand_id', 'description', 'battery', 'image', 'price', 'discount', 'status', 'product_type', 'final_price'];
+    protected $fillable = ['title', 'slug', 'brand_id', 'description', 'battery', 'speed' ,'image', 'price', 'discount', 'status', 'product_type', 'final_price'];
     public function getSlugSource()
     {
         return 'title';

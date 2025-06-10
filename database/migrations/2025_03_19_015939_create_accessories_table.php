@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->foreignUuid('brand_id')->constrained('brands')->cascadeOnDelete()->cascadeOnUpdate();
             $table->text('description')->nullable();
             $table->integer('battery')->nullable();
-
+            $table->integer('speed')->nullable();
             $table->string('image');
             $table->decimal('price', 10, 2);
             $table->integer('discount')->nullable()->default(0);

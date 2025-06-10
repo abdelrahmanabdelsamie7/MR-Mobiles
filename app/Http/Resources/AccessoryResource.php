@@ -14,6 +14,7 @@ class AccessoryResource extends JsonResource
             'battery'      => $this->battery,
             'image'        => $this->image,
             'total_quantity' =>$this->total_quantity ,
+            'speed' =>$this->speed ,
             'brand'        => new BrandResource($this->whenLoaded('brand')),
             'price'        => $this->price,
             'discount'     => $this->discount,
