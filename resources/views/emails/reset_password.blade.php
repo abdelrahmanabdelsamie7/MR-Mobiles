@@ -57,7 +57,7 @@
         <h2>🔒 Reset Your Password</h2>
         <p>Hello, <strong>{{ $user->name }}</strong> 👋</p>
         <p>We received a request to reset your password. Click the button below to set a new one:</p>
-        <a href="{{ url('http://localhost:8000/reset-password?token=' . $token) }}" class="reset-button">🔑 Reset
+        <a href="{{ url('http://localhost:3007/resetPassword?token=' . $token) }}" class="reset-button">🔑 Reset
             Password</a>
         <p>🔹 This link will expire in <strong>1 hour</strong> for your security.</p>
         <p>If you did not request this reset, you can safely ignore this email. Your password will remain unchanged.</p>
